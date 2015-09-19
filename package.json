@@ -1,0 +1,37 @@
+{
+  "name": "react-flux-webpack-starter",
+  "version": "0.0.1",
+  "description": "A boilerplate project for webpack + flux + react, also with react-mini-router",
+  "author": "Alex Barry, Josh Teeter",
+  "license": "MIT",
+  "main": "public/index.html",
+  "dependencies": {
+    "coffee-loader": "^0.7.2",
+    "css-loader": "^0.9.1",
+    "file-loader": "^0.8.4",
+    "flux": "^2.0.3",
+    "html-webpack-plugin": "^1.1.0",
+    "json-loader": "^0.5.2",
+    "lodash": "^3.1.0",
+    "react": "^0.13.3",
+    "react-mini-router": "^1.1.7",
+    "sass-loader": "^1.0.2",
+    "style-loader": "^0.8.3",
+    "url-loader": "^0.5.6",
+    "webpack": "^1.5.1"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.8.0",
+    "expect.js": "^0.3.1",
+    "less": "^2.5.1",
+    "mocha": "^2.3.0",
+    "node-sass": "^3.1.2",
+    "sinon": "^1.16.1",
+    "webpack-dev-server": "^1.7.0"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --opts spec/mocha.opts spec",
+    "webpack:development": "webpack-dev-server --config ./config/webpack.config.js --hot --inline --progress --colors",
+    "build": "webpack -p --config ./config/webpack.production.config.js"
+  }
+}
