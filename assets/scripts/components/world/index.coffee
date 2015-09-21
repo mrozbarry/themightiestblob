@@ -12,8 +12,8 @@ module.exports = Component.create
   componentDidMount: ->
     setInterval (=>
       { gameState } = @state
-      gameState.blobs[0].x += 5
-      gameState.blobs[0].y += 0
+      gameState.blobs[0].x += (Math.random() * 8) - 1
+      gameState.blobs[0].y += (Math.random() * 6) - 3
       console.debug gameState.blobs[0]
       @setState gameState: gameState
     ), 100
@@ -28,9 +28,12 @@ module.exports = Component.create
       viewBox: "0 0 #{svgSize.x} #{svgSize.y}"
       preserveAspectRatio: 'xMidYMid',
 
-      React.Children.map @props.children, (child) ->
-        React.cloneElement child, _.extend {
-          gameState: gameState
-          camera: camera
-        }, child.props
+      g
+        transform: @cameraToSvgTransform(camera, svgSize),
+
+        React.Children.map @props.children, (child) ->
+          React.cloneElement child, _.extend {
+            gameState: gameState
+            blobs: gameState.blobs
+          }, child.props
 

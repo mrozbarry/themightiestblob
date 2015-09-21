@@ -43,7 +43,7 @@ module.exports =
     target = @getCameraTarget()
     svgSize = @svgSize()
 
-    camera.position = @interpolateMotion(camera.position, target, 100, delta)
+    camera.position = @interpolateMotion(camera.position, target, 3000, delta)
     @setState camera: camera
 
     @setAnimationCallbackHandle()
