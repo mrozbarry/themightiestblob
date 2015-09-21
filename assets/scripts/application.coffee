@@ -1,26 +1,39 @@
 
+Login =   require('./components/login/index')
+World =   require('./components/world/index')
+Blobs=    require('./components/blobs/index')
+
 module.exports = Component.create
   displayName: 'Application'
 
   mixins: [RouterMini.RouterMixin]
 
   getInitialState: ->
-    serverKeys: []
-    userName: null
-    game: null
+    userName: 'demo'
 
   routes:
     '/': 'renderLogin'
-    '/g/:game': 'renderPlay'
+    '/w/:world': 'renderWorld'
+
+  isAbleToPlay: ->
+    { userName } = @state
+    !!userName
 
   renderLogin: ->
+    @renderWorld('demo')
 
-  renderPlay: ->
+  renderWorld: (worldKey) ->
+    unless @isAbleToPlay()
+      return @renderLogin()
+
+    World worldKey: worldKey,
+      Blobs {}
 
   notFound: (path) ->
     console.error 'Application.notFound', path
     @renderLogin()
 
   render: ->
-    @renderCurrentRoute()
+    React.DOM.div {},
+      @renderCurrentRoute()
 

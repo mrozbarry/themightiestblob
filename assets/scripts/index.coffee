@@ -1,4 +1,10 @@
 
 require('../styles/index.sass')
-require('./application')
+Application = require('./application')
+
+React.render(
+  Application(
+    history: true
+  ), document.getElementById('react__entry')
+)
 

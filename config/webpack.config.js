@@ -13,9 +13,9 @@ module.exports = {
   ],
 
   output: {
-    path: webpackPaths.buildPath,
+    path: webpackPaths.path,
     publicPath: webpackPaths.publicPath,
-    filename: webpackPaths.bundleName
+    filename: webpackPaths.filename
   },
 
   module: {
@@ -40,9 +40,9 @@ module.exports = {
       "RouterMini": "react-mini-router",
       "Flux": "flux",
 
-      "Dispatcher": path.resolve(__dirname, '..', 'lib', 'local_modules', 'dispatcher.coffee')
+      "Dispatcher": path.resolve(__dirname, '..', 'lib', 'local_modules', 'dispatcher.coffee'),
 
-      "Component": path.resolve(__dirname, '..', 'lib', 'local_modules', 'react-component.coffee'),
+      "Component": path.resolve(__dirname, '..', 'lib', 'local_modules', 'react-component.coffee')
     }),
 
     new Webpack.HotModuleReplacementPlugin()

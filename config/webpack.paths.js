@@ -4,8 +4,8 @@ var path = require('path'),
     bundlePath = 'build';
 
 module.exports = {
-  publicPath: "/",
-  buildPath: "/build/",
-  bundleName: 'bundle.js'
+  path: path.resolve(__dirname, '..', 'public'),
+  publicPath: '/build/',
+  filename: 'bundle.js'
 };
 
