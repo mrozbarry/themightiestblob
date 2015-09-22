@@ -1,7 +1,7 @@
 blobId = 1
 module.exports =
   randomBlobPosition: ->
-    (Math.random() * 20000) - 10000
+    (Math.random() * 2000) - 1000
 
   randomBlobColour: ->
     hexValues = '0123456789ABCDEF'
@@ -14,15 +14,16 @@ module.exports =
   randomBlobMass: -> Math.random() * 20 + 5
 
   createBlob: (playerUuid, position, mass, colour) ->
+    position = position || { x: @randomBlobPosition(), y: @randomBlobPosition() }
     {
       uuid: blobId++
       playerUuid: playerUuid
-      x: _.get(position, 'x', @randomBlobPosition())
-      y: _.get(position, 'y', @randomBlobPosition())
+      x: position.x
+      y: position.y
       vx: 0
       vy: 0
       mass: mass || @randomBlobMass()
-      color: colour || @randomBlobColour()
+      colour: colour || @randomBlobColour()
     }
 
   getInitialState: ->
@@ -63,6 +64,7 @@ module.exports =
 
   moveBlobsOfPlayerTo: (uuid, worldPosition, deltaTime) ->
     { gameState } = @state
+    return unless worldPosition.x? && worldPosition.y?
     gameState.blobs = _.map gameState.blobs, (blob) =>
       return blob unless blob.playerUuid == uuid
       @moveBlobTowards(blob, worldPosition, deltaTime)
@@ -70,13 +72,19 @@ module.exports =
 
 
   moveBlobTowards: (blob, target, deltaTime) ->
-    xDiff = blob.x - target.x
-    yDiff = blob.y - target.y
+    xDiff = target.x - blob.x
+    yDiff = target.y - blob.y
     dist = Math.sqrt((xDiff * xDiff) + (yDiff * yDiff))
     targetPosition =
       x: ((xDiff / dist) * 100 / blob.mass)
       y: ((yDiff / dist) * 100 / blob.mass)
-    nextPosition = @interpolateMotion(blob, targetPosition, 1000, deltaTime)
+    nextPosition = @interpolateMotion(blob, targetPosition, 200, deltaTime)
+    # console.debug 'Current Position:', blob.x, blob.y
+    # console.debug 'NextPosition', nextPosition
+    # console.debug 'Diffs:', x: xDiff, y: yDiff
+    # console.debug 'Distance:', dist
+    # console.debug 'Target:', target
+    # console.debug 'Blob target:', targetPosition
     blob.x = nextPosition.x
     blob.y = nextPosition.y
     blob
