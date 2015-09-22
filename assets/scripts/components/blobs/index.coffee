@@ -7,8 +7,9 @@ module.exports = Component.create
     { blobs } = @props
 
     g className: 'blobs__blobs',
-      blobs.map (blob) ->
+      blobs.map (blob, idx) ->
         circle
+          key: idx
           cx: blob.x
           cy: blob.y
           r: blob.mass

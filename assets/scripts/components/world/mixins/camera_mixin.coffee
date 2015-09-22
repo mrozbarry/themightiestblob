@@ -24,12 +24,10 @@ module.exports =
     @unsetAnimationCallbackHandle()
 
   localToScaledPosition: (localPosition, dom) ->
-    svgSize = @svgSize()
-    domBounds = dom.getBoundingClientRect()
-    {
-      x: (domBounds.width / svgSize.x) * localPosition.x
-      y: (domBounds.height / svgSize.y) * localPosition.y
-    }
+    svgPoint = dom.createSVGPoint()
+    svgPoint.x = localPosition.x
+    svgPoint.y = localPosition.y
+    svgPoint.matrixTransform(dom.getScreenCTM().inverse())
 
   localToWorldPosition: (localPosition, dom) ->
     { camera } = @state

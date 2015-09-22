@@ -28,8 +28,9 @@ module.exports =
       x: event.clientX
       y: event.clientY
 
-    console.log 'World Coordinates', @localToWorldPosition(mouse, event.currentTarget)
-
+    mouseControl.world = @localToWorldPosition(mouse, event.currentTarget)
+    @moveBlobsOfPlayerTo('some-guid', mouseControl.world, 1000)
+    @setState mouseControl: mouseControl
 
   disableMouse: (event) ->
     @setMouseControlTracking(false)

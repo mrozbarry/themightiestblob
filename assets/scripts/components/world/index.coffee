@@ -10,13 +10,10 @@ module.exports = Component.create
   mixins: WorldMixins
 
   componentDidMount: ->
-    setInterval (=>
-      { gameState } = @state
-      gameState.blobs[0].x += (Math.random() * 8) - 1
-      gameState.blobs[0].y += (Math.random() * 6) - 3
-      console.debug gameState.blobs[0]
-      @setState gameState: gameState
-    ), 100
+    @installOnRef(@refs.svgRoot)
+
+  componentWillUnmount: ->
+    @uninstallFromRef(@refs.svgRoot)
 
   render: ->
     { gameState, camera } = @state
@@ -25,6 +22,7 @@ module.exports = Component.create
 
     svg
       className: 'blobs-world'
+      ref: 'svgRoot'
       viewBox: "0 0 #{svgSize.x} #{svgSize.y}"
       preserveAspectRatio: 'xMidYMid',
 

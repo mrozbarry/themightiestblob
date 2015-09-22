@@ -1,7 +1,7 @@
-
+blobId = 1
 module.exports =
   randomBlobPosition: ->
-    (Math.random() * 2000) - 1000
+    (Math.random() * 20000) - 10000
 
   randomBlobColour: ->
     hexValues = '0123456789ABCDEF'
@@ -11,9 +11,25 @@ module.exports =
     hex.unshift('#')
     hex.join('')
 
-  randomBlobMass: -> Math.random() * 20
+  randomBlobMass: -> Math.random() * 20 + 5
+
+  createBlob: (playerUuid, position, mass, colour) ->
+    {
+      uuid: blobId++
+      playerUuid: playerUuid
+      x: _.get(position, 'x', @randomBlobPosition())
+      y: _.get(position, 'y', @randomBlobPosition())
+      vx: 0
+      vy: 0
+      mass: mass || @randomBlobMass()
+      color: colour || @randomBlobColour()
+    }
 
   getInitialState: ->
+    blobs = new Array()
+    blobs.push @createBlob('some-guid', {x: 0, y: 0}, 20, '#ff00ff')
+    _.each [0..100], (blobNum) => blobs.push @createBlob()
+
     gameState:
       uuid: 'some-guid'
       spectatingUuid: null
@@ -22,36 +38,18 @@ module.exports =
         {uuid: 'some-guid', name: 'Demo'}
       ]
 
-      blobs: [
-        {
-          uuid: 'some-guid',
-          x: 0, y: 200, vx: 0, vy: 0,
-          colour: '#ff00ff'
-          mass: 25.0
-        }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-        { x: @randomBlobPosition(), y: @randomBlobPosition(), vx: 0, vy: 0, colour: @randomBlobColour(), mass: @randomBlobMass() }
-      ]
+      blobs: blobs
 
-  getGameState: ->
-    @state.game
-
-  positionOfPlayer: (uuid) ->
+  playerBlobs: (uuid) ->
     { gameState } = @state
 
-    unless gameState && (gameState.players.length > 0)
-      return { x: 0, y: 0 }
+    return [] unless gameState && (gameState.players.length > 0)
 
     player = _.find(gameState.players, uuid: uuid)
+    _.select gameState.blobs, (blob) -> blob.playerUuid == player.uuid
 
-    blobs = _.select gameState.blobs, (blob) ->
-      blob.uuid == player.uuid
+  positionOfPlayer: (uuid) ->
+    blobs = @playerBlobs(uuid)
 
     unless blobs.length > 0
       return { x: 0, y: 0 }
@@ -63,37 +61,25 @@ module.exports =
     ), { x: blobs[0].x, y: blobs[0].y }
 
 
-  installMouseListener: (element) ->
-    element.addEventListener 'mousemove', @handleMouseMove
+  moveBlobsOfPlayerTo: (uuid, worldPosition, deltaTime) ->
+    { gameState } = @state
+    gameState.blobs = _.map gameState.blobs, (blob) =>
+      return blob unless blob.playerUuid == uuid
+      @moveBlobTowards(blob, worldPosition, deltaTime)
+    @setState gameState: gameState
 
-  uninstallMouseListener: (element) ->
-    element.removeEventListener 'mousemove', @handleMouseMove
 
-  handleMouseMove: (e) ->
-
-  componentWillMount: ->
-    # @socket = new Websocket("ws://#{window.location.host}")
-    # @socket.onmessage = @socketMessage
-    # @socket.onopen = @socketConnect
-    # @socket.onclose = @socketDisconnect
-
-  componentWillUnmount: ->
-    # @leaveGame()
-    # @socket.close()
-    # delete @socket
-    # @socket = null
-
-  socketMessage: (event) ->
-
-  socketConnect: ->
-
-  socketDisconnect: ->
-
-  socketSend: (channel, message) ->
-
-  joinGame: ->
-
-  leaveGame: ->
+  moveBlobTowards: (blob, target, deltaTime) ->
+    xDiff = blob.x - target.x
+    yDiff = blob.y - target.y
+    dist = Math.sqrt((xDiff * xDiff) + (yDiff * yDiff))
+    targetPosition =
+      x: ((xDiff / dist) * 100 / blob.mass)
+      y: ((yDiff / dist) * 100 / blob.mass)
+    nextPosition = @interpolateMotion(blob, targetPosition, 1000, deltaTime)
+    blob.x = nextPosition.x
+    blob.y = nextPosition.y
+    blob
 
 
 
