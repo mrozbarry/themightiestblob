@@ -8,9 +8,6 @@ module.exports =
       zoom: 1.0
       targetPlayerUuid: null
 
-  getCamera: ->
-    @state.camera
-
   svgSize: ->
     x: 1920, y: 1080
 
@@ -25,6 +22,23 @@ module.exports =
   componentWillUnmount: ->
     @shouldAnimateCamera = false
     @unsetAnimationCallbackHandle()
+
+  localToScaledPosition: (localPosition, dom) ->
+    svgSize = @svgSize()
+    domBounds = dom.getBoundingClientRect()
+    {
+      x: (domBounds.width / svgSize.x) * localPosition.x
+      y: (domBounds.height / svgSize.y) * localPosition.y
+    }
+
+  localToWorldPosition: (localPosition, dom) ->
+    { camera } = @state
+    scaled = @localToScaledPosition(localPosition, dom)
+    svgSize = @svgSize()
+    {
+      x: camera.position.x + scaled.x - (svgSize.x / 2)
+      y: camera.position.y + scaled.y - (svgSize.y / 2)
+    }
 
   getDelta: (timeStamp) ->
     delta = 0
