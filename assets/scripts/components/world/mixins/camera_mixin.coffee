@@ -1,69 +1,22 @@
-
+interpolateMotion = require('../../../lib/interpolate_motion')
 module.exports =
-  getInitialState: ->
-    camera:
-      position:
-        x: 0
-        y: 500
-      zoom: 1.0
-      targetPlayerUuid: null
-
-  svgSize: ->
-    x: 1920, y: 1080
-
-  shouldAnimateCamera: false
-  animationHandle: null
-  lastTimeStamp: null
-
   componentDidMount: ->
-    @shouldAnimateCamera = true
-    @setAnimationCallbackHandle()
+    @addGameStateCallback('before', @cameraAnimationCallback)
 
   componentWillUnmount: ->
-    @shouldAnimateCamera = false
-    @unsetAnimationCallbackHandle()
+    @removeGameStateCallback('before', @cameraAnimationCallback)
 
-  localToScaledPosition: (localPosition, dom) ->
-    svgPoint = dom.createSVGPoint()
-    svgPoint.x = localPosition.x
-    svgPoint.y = localPosition.y
-    svgPoint.matrixTransform(dom.getScreenCTM().inverse())
-
-  localToWorldPosition: (localPosition, dom) ->
-    { camera } = @state
-    scaled = @localToScaledPosition(localPosition, dom)
-    svgSize = @svgSize()
-    {
-      x: camera.position.x + scaled.x - (svgSize.x / 2)
-      y: camera.position.y + scaled.y - (svgSize.y / 2)
-    }
-
-  getDelta: (timeStamp) ->
-    delta = 0
-    if @lastTimeStamp
-      delta = timeStamp - @lastTimeStamp
-    delta
-
-  getCameraTarget: ->
-    gameState = @state.gameState
-    @positionOfPlayer(gameState.spectatingUuid || gameState.uuid)
-
-  cameraAnimationCallback: (timeStamp) ->
-    { camera } = @state
-
-    delta = @getDelta(timeStamp)
-    target = @getCameraTarget()
+  cameraAnimationCallback: (delta, state) ->
+    target = @getCameraTarget(state)
     svgSize = @svgSize()
 
-    camera.position = @interpolateMotion(camera.position, target, 3000, delta)
-    @setState camera: camera
+    state.camera.position = interpolateMotion(state.camera.position, target, 1000, delta)
 
-    @setAnimationCallbackHandle()
-    @lastTimeStamp = timeStamp
+    state
 
   cameraToSvgTransform: (camera, svgSize) ->
-    x = (svgSize.x / 2) - camera.position.x
-    y = (svgSize.y / 2) - camera.position.y
+    x = (svgSize.x / 2) + camera.position.x
+    y = (svgSize.y / 2) + camera.position.y
     [
       'translate('
       x
@@ -71,14 +24,4 @@ module.exports =
       y
       ')'
     ].join('')
-
-  # ---
-  #
-  setAnimationCallbackHandle: ->
-    if @shouldAnimateCamera
-      @animationHandle = requestAnimationFrame(@cameraAnimationCallback)
-
-  unsetAnimationCallbackHandle: ->
-    if @animationHandle
-      cancelAnimationFrame(@animationHandle)
 

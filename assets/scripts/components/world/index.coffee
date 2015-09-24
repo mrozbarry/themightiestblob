@@ -10,10 +10,11 @@ module.exports = Component.create
   mixins: WorldMixins
 
   componentDidMount: ->
-    @installOnRef(@refs.svgRoot)
+    @installMouseControlOnRef(@refs.svgRoot)
+    @runGame(true)
 
   componentWillUnmount: ->
-    @uninstallFromRef(@refs.svgRoot)
+    @uninstallMouseControlFromRef(@refs.svgRoot)
 
   render: ->
     { gameState, camera } = @state

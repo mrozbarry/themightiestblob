@@ -1,63 +1,39 @@
+lastMouseState = {x: 0, y: 0}
+domElement = null
 
 module.exports =
-  getInitialState: ->
-    mouseControl:
-      tracking: false
-      world:
-        x: 0
-        y: 0
-
-  mouseAnimationCallback: null
-  lastMouseControlTimeStamp: null
-
-  installOnRef: (reference) ->
+  installMouseControlOnRef: (reference) ->
     dom = reference.getDOMNode()
 
     dom.addEventListener('mousemove', @blobMouseTarget, true)
     dom.addEventListener('mouseenter', @enableMouse, true)
     dom.addEventListener('mouseleave', @disableMosue, true)
 
-    @enableMouse(null)
+    @addGameStateCallback 'before', @targetBlob
+    domElement = dom
 
-  uninstallFromRef: (reference) ->
+  uninstallMouseControlFromRef: (reference) ->
     dom = reference.getDOMNode()
 
     dom.removeEventListener('mousemove', @blobMouseTarget)
     dom.removeEventListener('mouseenter', @enableMouse)
     dom.removeEventListener('mouseleave', @disableMosue)
 
-  blobMouseTarget: (event) ->
-    { mouseControl, camera } = @state
+    @removeGameStateCallback 'before', @targetBlob
+    domElement = null
 
+  blobMouseTarget: (event) ->
     mouse =
       x: event.clientX
       y: event.clientY
 
-    mouseControl.world = @localToWorldPosition(mouse, event.currentTarget)
-    @setState mouseControl: mouseControl
+    console.log 'Mouse:', mouse
 
-  targetBlob: (timeStamp) ->
-    { mouseControl } = @state
-    delta = 1
-    if @lastMouseControlTimeStamp
-      delta = @lastMouseControlTimeStamp - timeStamp
-      @lastMouseControlTimeStamp = timeStamp
-    @moveBlobsOfPlayerTo('some-guid', mouseControl.world, delta)
-    console.log 'MouseControlMixin.targetBlob'
-    @mouseAnimationCallback = requestAnimationFrame(@targetBlob)
+    lastMouseState = mouse
 
-  disableMouse: (event) ->
-    @setMouseControlTracking(false)
-    if @mouseAnimationCallback
-      cancelAnimationFrame(@mouseAnimationCallback)
-      @mouseAnimationCallback = null
-
-  enableMouse: (event) ->
-    @setMouseControlTracking(true)
-    @targetBlob(0)
-
-  setMouseControlTracking: (toggle) ->
-    { mouseControl } = @state
-    mouseControl.tracking = toggle
-    @setState mouseControl: mouseControl
+  targetBlob: (delta, state) ->
+    state.mouseControl.world = @localToWorldPosition(lastMouseState, domElement, state)
+    return state unless state.mouseControl.world.x? && state.mouseControl.world.y?
+    state = @moveBlobsOfPlayerTo(state, 'some-guid', state.mouseControl.world, delta)
+    state
 
