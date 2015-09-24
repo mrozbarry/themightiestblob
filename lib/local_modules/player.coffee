@@ -20,6 +20,7 @@ class Player
   constructor: (name = null) ->
     @name = name || randomName()
     @uuid = uuid.v4()
+    @target = new MathExt.Vector()
 
 
 module.exports = Player

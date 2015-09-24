@@ -1,30 +1,43 @@
+
 interpolateMotion = require('../interpolate_motion')
-MathExt = require('./math_ext')
+Player = require('./player')
+Blob = require('./blob')
 
 class TheMightiestBlob
-  @EVENTS =
+  @EVENTS:
     PRERENDER: 'tmb:render:before'
     RENDER: 'tmb:render:present'
     POSTRENDER: 'tmb:render:after'
+    PLAYER_JOIN: 'tmb:player:join'
+    PLAYER_LEAVE: 'tmb:player:leave'
+    PLAYER_INPUT: 'tmb:player:input'
+    PLAYER_LIST: 'tmb:player:list'
 
-  constructor: (@svgTarget) ->
+  constructor: ->
     @lastTimeStep = null
     @animationFrameHandle = null
-    @camera = MathExt.Rect.fromPointWithSize(new MathExt.Vector(0, 0), 1920, 1080)
     @blobs = new Array()
     @players = new Array()
     @inputPlayerUuid = null
+    @subscribe(TheMightiestBlob.EVENTS.PLAYER_JOIN, @addPlayer)
 
   subscribe: (eventName, method) ->
-    @eventTarget.addEventListener(eventName, method, true)
+    addEventListener(eventName, _.bind(method, @), true)
 
   unsubscribe: (eventName, method) ->
-    @eventTarget.removeEventListener(eventName, method)
+    removeEventListener(eventName, _.bind(method, @))
 
   publish: (eventName, payload) ->
     evt = new CustomEvent eventName,
       detail: payload
-    @eventTarget.dispatchEvent(evt)
+    dispatchEvent(evt)
+
+  addPlayer: (event) ->
+    p = new Player(event.detail.name)
+    b = new Blob(p)
+    @players.push p
+    @blobs.push b
+    @publish TheMightiestBlob.EVENTS.PLAYER_LIST, @
 
   runSimulation: ->
     @gameStep(null)
@@ -40,55 +53,22 @@ class TheMightiestBlob
     @lastTimeStep = timeStep
     delta
 
-  domToWorldCoordinate: (mouseVector) ->
-    svgPoint = @svgTarget.createSVGPoint()
-    svgPoint.x = localPosition.x
-    svgPoint.y = localPosition.y
-    svgPoint.matrixTransform(@svgTarget.getScreenCTM().inverse())
-
-  setMousePosition: (x, y) ->
-    @lastMousePosition
-
-  blobSplit: ->
-    # TODO
-
-  blobMerge: ->
-    # TODO
-
-  createPayload: (customData = {}) ->
-    _.extend {
-      input:
-        setMousePosition: @setMousePosition
-        blobSplit: @blobSplit
-        blobMerge: @blobMerge
-    }, customData
-
   gameStep: (timeStep) ->
     delta = @gameStepDelta(timeStep)
 
-    @publish TheMightiestBlobLocal.EVENTS.PRERENDER,
-      @createPayload()
-
+    @publish TheMightiestBlob.EVENTS.PRERENDER, @
     @blobs = @simulateEachBlob(@blobs, @players)
-
-    @publish TheMightiestBlobLocal.EVENTS.POSTRENDER,
-      @createPayload()
+    @publish TheMightiestBlob.EVENTS.POSTRENDER, @
 
     @animationFrameHandle = requestAnimationFrame(
-      @gameStep
+      _.bind(@gameStep, @)
     )
 
-  simulatePlayersAndBlobs: (players, blobs) ->
+  simulateEachBlob: (blobs, players) ->
     _.map blobs, (blob) =>
       player = _.find players, uuid: blob.playerUuid
       return blob unless player
-      @updateBlob(blob, player)
+      blob.simulate(player)
 
-  updateBlob: (blob, player) ->
-    unit = player.target.normal(blob.position)
-    blob.position = blob.position.add(
-      unit.multiply(1000 / blob.mass)
-    )
-    blob
-
+module.exports = TheMightiestBlob
 
