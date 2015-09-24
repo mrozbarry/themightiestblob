@@ -41,8 +41,9 @@ module.exports = {
       "Flux": "flux",
 
       "Dispatcher": path.resolve(__dirname, '..', 'lib', 'local_modules', 'dispatcher.coffee'),
+      "Component": path.resolve(__dirname, '..', 'lib', 'local_modules', 'react-component.coffee'),
 
-      "Component": path.resolve(__dirname, '..', 'lib', 'local_modules', 'react-component.coffee')
+      "MathExt": path.resolve(__dirname, '..', 'lib', 'local_modules', 'math_ext.coffee')
     }),
 
     new Webpack.HotModuleReplacementPlugin()
