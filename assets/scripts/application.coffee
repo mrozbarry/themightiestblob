@@ -1,7 +1,10 @@
 
 Login =   require('./components/login/index')
 World =   require('./components/world/index')
-Blobs=    require('./components/blobs/index')
+Blobs =   require('./components/blobs/index')
+
+TheMightiestBlob = require('../../lib/local_modules/game_engine')
+game = new TheMightiestBlob()
 
 module.exports = Component.create
   displayName: 'Application'
@@ -26,7 +29,9 @@ module.exports = Component.create
     unless @isAbleToPlay()
       return @renderLogin()
 
-    World worldKey: worldKey,
+    World
+      game: game
+      worldKey: worldKey,
       Blobs {}
 
   notFound: (path) ->

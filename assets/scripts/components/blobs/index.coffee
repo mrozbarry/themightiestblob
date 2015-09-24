@@ -4,10 +4,10 @@ module.exports = Component.create
   displayName: 'Components:Blobs'
 
   render: ->
-    { blobs } = @props
+    { game } = @props
 
     g className: 'blobs__blobs',
-      blobs.map (blob, idx) ->
+      game.blobs.map (blob, idx) ->
         circle
           key: idx
           cx: blob.x
