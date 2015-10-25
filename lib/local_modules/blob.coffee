@@ -1,16 +1,31 @@
+uuid = require('uuid')
+
+randomColour = ->
+  rgb = _.sample [0...256], 3
+  r: rgb[0]
+  g: rgb[1]
+  b: rgb[2]
+
 
 class Blob
-  constructor: (player, @position = new MathExt.Vector(), @mass = 25) ->
-    @playerUuid = player.uuid
-    @position = new MathExt.Vector()
+  position: new MathExt.Vector()
+  velocity: new MathExt.Vector()
+  connectingBlobs: new Array()
 
-  simulate: (players) ->
-    player = _.find players, uuid: @playerUuid
-    return @ unless player
-    unit = player.target.normal(@position)
-    @position = @position.add(
-      unit.multiply(1000 / @mass)
-    )
+  constructor: (@colour, @position = (new MathExt.Vector()), @mass = 1) ->
+    @uuid = uuid.v4()
+    @colour ||= randomColour()
+
+  radius: ->
+    (Math.floor(@mass / 3) * 3) + 10
+
+  update: (configuration) ->
+    @position.x += @velocity.x
+    @position.y += @velocity.y
+
+    @velocity.x /= configuration.speedDecayPerTick
+    @velocity.y /= configuration.speedDecayPerTick
+
     @
 
 module.exports = Blob

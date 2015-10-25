@@ -20,7 +20,7 @@ class Vector
     diff = @subtract(other)
     Math.sqrt((diff.x * diff.x) + (diff.y * diff.y))
 
-  normal: (other) ->
+  normalize: (other) ->
     @subtract(other).divide(@distance(other))
 
 class Rect
