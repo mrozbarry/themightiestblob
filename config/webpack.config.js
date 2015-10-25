@@ -1,4 +1,5 @@
 var Webpack = require('webpack'),
+    HtmlWebpackPlugin = require('html-webpack-plugin'),
     path = require('path'),
     mainPath = path.resolve(__dirname, '..', 'assets', 'scripts', 'index.coffee'),
     webpackPaths = require('./webpack.paths.js'),
@@ -9,6 +10,7 @@ module.exports = {
   devtool: 'eval-source-map',
 
   entry: [
+    "webpack-hot-middleware/client?relaod=true",
     mainPath
   ],
 
@@ -34,10 +36,13 @@ module.exports = {
   },
 
   plugins: [
+    new Webpack.optimize.OccurenceOrderPlugin(),
+    new Webpack.HotModuleReplacementPlugin(),
+    new HtmlWebpackPlugin(),
     new Webpack.ProvidePlugin({
       "_": "lodash",
-      "React": "react/addons",
-      "RouterMini": "react-mini-router",
+      "ReactDOM": "react-dom",
+      "React": "react",
       "Flux": "flux",
 
       "Dispatcher": path.resolve(__dirname, '..', 'lib', 'local_modules', 'dispatcher.coffee'),
@@ -47,12 +52,5 @@ module.exports = {
     }),
 
     new Webpack.HotModuleReplacementPlugin()
-  ],
-
-  devServer: {
-    port: devServerPort,
-    historyApiFallback: {
-      index: "public/index.html"
-    }
-  }
+  ]
 };
