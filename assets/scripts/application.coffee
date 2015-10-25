@@ -1,44 +1,19 @@
 
 Login =   require('./components/login/index')
 World =   require('./components/world/index')
-Blobs =   require('./components/blobs/index')
 
-TheMightiestBlob = require('../../lib/local_modules/game_engine')
+TheMightiestBlob = require('../../lib/local_modules/the_mightiest_blob')
 game = new TheMightiestBlob()
 
 module.exports = Component.create
   displayName: 'Application'
 
-  mixins: [RouterMini.RouterMixin]
-
   getInitialState: ->
     userName: 'demo'
-
-  routes:
-    '/': 'renderLogin'
-    '/w/:world': 'renderWorld'
-
-  isAbleToPlay: ->
-    { userName } = @state
-    !!userName
-
-  renderLogin: ->
-    @renderWorld('demo')
-
-  renderWorld: (worldKey) ->
-    unless @isAbleToPlay()
-      return @renderLogin()
-
-    World
-      game: game
-      worldKey: worldKey,
-      Blobs {}
-
-  notFound: (path) ->
-    console.error 'Application.notFound', path
-    @renderLogin()
+    userId: null
+    nextHash: null
 
   render: ->
-    React.DOM.div {},
-      @renderCurrentRoute()
+    World
+      game: game
 

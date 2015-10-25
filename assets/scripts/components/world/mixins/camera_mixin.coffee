@@ -1,4 +1,3 @@
-interpolateMotion = require('../../../lib/interpolate_motion')
 module.exports =
   componentDidMount: ->
     @addGameStateCallback('before', @cameraAnimationCallback)
@@ -9,8 +8,6 @@ module.exports =
   cameraAnimationCallback: (delta, state) ->
     target = @getCameraTarget(state)
     svgSize = @svgSize()
-
-    state.camera.position = interpolateMotion(state.camera.position, target, 1000, delta)
 
     state
 
