@@ -6,6 +6,9 @@ container = document.createElement('div')
 document.body.appendChild(container)
 
 ReactDOM.render(
-  Application(), container
+  React.DOM.div(
+    {}
+    Application()
+  ), container
 )
 

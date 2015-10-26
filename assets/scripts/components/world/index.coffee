@@ -1,7 +1,8 @@
 require('./styles/index.sass')
 
-Player = require('../../../../lib/local_modules/player')
-Blob = require('../../../../lib/local_modules/blob')
+# Player = require('../../../../lib/local_modules/player')
+# Blob = require('../../../../lib/local_modules/blob')
+MathExt = require('../../../../lib/local_modules/math_ext')
 
 { svg, rect, g, line } = React.DOM
 
@@ -13,59 +14,16 @@ module.exports = Component.create
   resolution: new MathExt.Vector(1920, 1080)
 
   # mixins: WorldMixins
-  getInitialState: ->
-    players: new Array()
-
-  setUpWorld: (game) ->
-    world = new Player('World')
-    world.uuid = null
-
-    _.each [0...50], (blobNumber) ->
-      x = Math.random() * (3000 * 2) - 1500
-      y = Math.random() * (3000 * 2) - 1500
-      world.addBlob new MathExt.Vector(x, y), 0.5
-
-    game.addPlayer world
-
-    game
 
   componentDidMount: ->
-    { game } = @props
-    me = new Player('Demo')
-    me.addBlob(new MathExt.Vector(), 100)
-
-    game.addPlayer me
-
-    # game = @setUpWorld(game)
-
-    game.on 'game:update', @gameStateUpdate
-
-    @setState { uuid: me.uuid }
-
     @refs.root.addEventListener 'mousemove', @handleMouseMotion, true
-
-  gameStateUpdate: (gameState) ->
-
-    @setState {
-      players: gameState.players
-    }
 
   handleMouseMotion: (e) ->
     root = @refs.root
     boundingBox = root.getBoundingClientRect()
-    console.log 'handleMouseMotion.boundingBox', boundingBox.left, boundingBox.top, boundingBox.width, boundingBox.height
-    console.debug '                         (', [e.clientX, e.clientY],')'
-
-    # p = renderer.createSVGPoint()
-    # p.x = e.clientX
-    # p.y = e.clientY
-    # blobTarget = p.matrixTransform(
-    #   renderer.getScreenCTM().inverse()
-    # )
-    # vec = new MathExt.Vector(blobTarget.x, blobTarget.y)
-    # offset = new MathExt.Vector(@resolution.x / 2, @resolution.y / 2)
-    # # console.debug 'World.handleMouseMotion', blobTarget.x, blobTarget.y
-    # @props.game.setPlayerTarget(@state.uuid, vec.add(offset))
+    # console.log 'handleMouseMotion.boundingBox', boundingBox.left, boundingBox.top, boundingBox.width, boundingBox.height
+    # console.debug '                         (', [e.clientX, e.clientY],')'
+    # TODO: send this to the server
 
   myBlobs: (playerUuid, allBlobs) ->
     _.select allBlobs, (blob) ->
@@ -136,7 +94,7 @@ module.exports = Component.create
             translateLine(0, -9999, 0, 9999)
           )
 
-          players.map (player) ->
+          @props.gameState.players.map (player) ->
             PlayerBlobs
               key: player.uuid
               player: player
