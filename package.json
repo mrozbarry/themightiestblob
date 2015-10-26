@@ -8,9 +8,9 @@
   "dependencies": {
     "eventemitter3": "^1.1.1",
     "flux": "^2.0.3",
+    "js-md5": "^0.3.0",
     "lodash": "^3.1.0",
-    "lz4": "^0.5.0",
-    "md5": "^2.0.0",
+    "lzutf8": "^0.3.2",
     "react": "^0.14.0",
     "react-dom": "0.14.0",
     "uuid": "^2.0.1",
