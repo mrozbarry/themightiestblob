@@ -1,6 +1,7 @@
 uuid = require('uuid')
-
 Blob = require('./blob')
+MathExt = require('./math_ext')
+_ = require('lodash')
 
 randomColour = ->
   rgb = _.sample [0...256], 3

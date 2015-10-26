@@ -1,3 +1,4 @@
+MathExt = require('./math_ext')
 uuid = require('uuid')
 
 randomColour = ->

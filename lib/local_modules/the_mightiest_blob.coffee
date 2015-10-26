@@ -1,15 +1,17 @@
 
 Player = require('./player')
 Blob = require('./blob')
+MathExt = require('./math_ext')
+_ = require('lodash')
 
 class TheMightiestBlob extends require('eventemitter3')
   constructor: (configuration) ->
     @lastTimeStep = null
-    @animationFrameHandle = null
+    @timeoutHandle = null
     @configuration = _.extend {
       maxPlayers: 16
       speedDecayPerTick: (1 / 2)
-      timeStep: 1.0 / 60.0
+      timeStep: (1.0 / 60.0) * 1000
       worldSize: 10000
       startBlobMass: 1
     }, configuration
@@ -40,7 +42,7 @@ class TheMightiestBlob extends require('eventemitter3')
       @emit "game:players:change"
 
   allPlayerBlobs: ->
-    _.reduce players, ((allBlobs, player) ->
+    _.reduce @players, ((allBlobs, player) ->
       return allBlobs if player.uuid == null
       allBlobs.concat player.blobs
     ), new Array()
@@ -51,7 +53,7 @@ class TheMightiestBlob extends require('eventemitter3')
     squaredY = (b.position.y - a.position.y) << 2
     squared = squaredX + squaredY
     return 0 if squared >= edgeTouch
-    Math.abs(edgetTouch - squared)
+    Math.abs(edgeTouch - squared)
 
   selectBlobsCollidingWithBlob: (blobs, testBlob, bufferSpace) ->
     return new Array() unless blobs.length > 0
@@ -78,13 +80,14 @@ class TheMightiestBlob extends require('eventemitter3')
 
   runSimulation: ->
     @accumulator = 0
+    @lastTimeStep = Date.now()
     @gameStep(null)
     @
 
   pauseSimulation: ->
-    if @animationFrameHandle
-      cancelAnimationFrame(@animationFrameHandle)
-    @animationFrameHandle = null
+    if @timeoutHandle
+      clearTimeout @timeoutHandle
+    @timeoutHandle = null
 
   gameStepDelta: (timeStep) ->
     delta = 0
@@ -92,8 +95,8 @@ class TheMightiestBlob extends require('eventemitter3')
     @lastTimeStep = timeStep
     delta
 
-  gameStep: (timeStep) ->
-    @accumulator += @gameStepDelta(timeStep)
+  gameStep: ->
+    @accumulator += @gameStepDelta(Date.now())
     while @accumulator > @configuration.timeStep
       @players = _.map @players, (player) =>
         player.update(@configuration)
@@ -105,11 +108,9 @@ class TheMightiestBlob extends require('eventemitter3')
 
     # This stops the browser from being
     # completely locked up!
-    setTimeout (=>
-      @animationFrameHandle = requestAnimationFrame(
-        _.bind(@gameStep, @)
-      )
-    ), @timeStep
+    @timeoutHandle = setTimeout (=>
+      @gameStep()
+    ), @configuration.timeStep
 
 module.exports = TheMightiestBlob
 
