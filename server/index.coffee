@@ -15,9 +15,7 @@ path = require("path")
 
 # ---
 
-TheMightiestBlob = require('../lib/local_modules/the_mightiest_blob')
-game = new TheMightiestBlob(maxPlayers: 5)
-WebSocketServer = require("ws").Server
+GameServer = require("./game_server")
 
 # ---
 
@@ -54,11 +52,5 @@ server.listen port, ->
   console.log "http server listening on %d", port
 
 
-wss = new WebSocketServer {server: server}
-console.log "websocket server created"
-
-wss.on "connection", (ws) ->
-  ws.on "message", ->
-  ws.on "close", ->
-
-  ws.send
+game = new GameServer(server)
+game.run()

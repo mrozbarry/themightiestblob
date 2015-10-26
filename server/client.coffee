@@ -1,5 +1,8 @@
-Player = require('../lib/local_modules/player.coffee')
-lz4 = require('lz4')
+Player = require('../lib/local_modules/player')
+MathExt = require('../lib/local_modules/math_ext')
+lz4 = require('lzutf8')
+md5 = require('js-md5')
+uuid = require('uuid')
 
 randomPosition = (game) ->
   new MathExt.Vector(
@@ -7,29 +10,27 @@ randomPosition = (game) ->
     Math.random() * game.configuration.worldSize
   )
 
-module.exports = class Client extends require('eventemitter3')
-  constructor: (@game, @socket) ->
+module.exports = class Client
+  constructor: (@server, @socket) ->
+    @uuid = uuid.v4()
     @state = 'ready'
     @player = null
     @lastOutgoing = null
     @lastIncoming = null
 
-    @socket.on "message", (e) =>
+    @socket.on "message", (data, flags) =>
+      message = @server.decompressMessage(data)
+      @processMessage(message)
 
     @socket.on "close", =>
-      @leaveGame()
+      @handleClientLeave(null)
+
+    @socket.send(
+      @server.encodeMessage('server:hello', 'tmb')
+    )
 
   destructor: ->
-    @game.removePlayer(@player)
-
-  sendMessage: (channel, data) ->
-    message = JSON.stringify({
-      channel: channel
-      block: @lastOutgoing
-      data: data
-    })
-    @lastOutgoing = md5.digest_s(message)
-    @socket.send lz4.encode(message)
+    @server.game.removePlayer(@player)
 
   processMessage: (message) ->
     switch message.channel
@@ -38,34 +39,46 @@ module.exports = class Client extends require('eventemitter3')
       when "client:join" then @handleClientJoin(message.data)
       when "client:leave" then @handleClientLeave(message.data)
 
-  joinGame: (name) ->
+  handleSetInput: (payload) ->
+
+  handleBroadcastMessage: (payload) ->
+    message = @server.encodeMessage "client:broadcast:message",
+      playerUuid: @player.uuid
+      text: payload.text
+      unverified: true
+
+    @server.broadcastMessage(message)
+
+  handleClientJoin: (payload) ->
     if @player?
       throw new Error('Player.joinGame: cannot join a game when already in a game')
 
-    @player = new Player(name)
+    @player = new Player(payload.name)
     @player.addBlob(
-      randomPosition(@game),
-      @game.configuration.startBlobMass
+      randomPosition(@server.game),
+      @server.game.configuration.startBlobMass
     )
     playerBlob = @player.blobs[0]
 
-    allPlayerBlobs = @game.allPlayerBlobs()
+    allPlayerBlobs = @server.game.allPlayerBlobs()
 
-    while @game.anyBlobsCollidingWithBlob(allPlayerBlobs, playerBlob)
+    while @server.game.anyBlobsCollidingWithBlob(allPlayerBlobs, playerBlob)
       @player
         .removeBlob(playerBlob)
         .addBlob(
-          randomPosition(@game),
-          @game.configuration.startBlobMass
+          randomPosition(@server.game),
+          @server.game.configuration.startBlobMass
         )
-        .addBlob(randomPosition(@game))
+        .addBlob(randomPosition(@server.game))
 
       playerBlob = @player.blobs[0]
 
-    @game.addPlayer @player
+    @server.game.addPlayer @player
 
-  leaveGame: ->
+  handleClientLeave: (payload) ->
     if @player
-      @game.removePlayer @player
+      @server.game.removePlayer @player
+    @socket.close()
+    @server.removeClientWithUuid(@uuid)
 
 
