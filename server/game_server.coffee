@@ -1,50 +1,47 @@
 TheMightiestBlob = require('../lib/local_modules/the_mightiest_blob')
+Player = require('../lib/local_modules/player')
+MathExt = require('../lib/local_modules/math_ext')
+
+
 WebSocketServer = require("ws").Server
-Client = require('./client')
+clientize = require('./client')
 _ = require('lodash')
 lz4 = require('lzutf8')
 md5 = require('js-md5')
 
+random = (min, max, filter = ((n) -> n)) ->
+  diff = max - min
+  filter((Math.random() * diff) + min)
+
+randomPosition = (game) ->
+  new MathExt.Vector(
+    random(0, game.configuration.worldSize, parseInt)
+    random(0, game.configuration.worldSize, parseInt)
+  )
+
+
 module.exports = class
   constructor: (server) ->
-    @game = new TheMightiestBlob(maxPlayers: 5)
+    @game = new TheMightiestBlob(
+      maxPlayers: 5
+      worldSize: 500
+    )
     @wss = new WebSocketServer {server: server}
-    @clients = new Array()
-    @clientIdsToRemove = new Array()
-    @clientCleanupTimeout = null
+    @lastGameState = null
 
-    console.log "websocket server created"
 
   run: ->
     @wss.on "connection", (ws) =>
-      @clients.push (new Client(@, ws))
+      clientize(@, ws)
 
     @game.on "game:state:change", (e) =>
-      state = _.pick(@game, ['configuration', 'players'])
-      message = @encodeMessage("game:state:change", state)
-      @broadcastMessage(message)
-
-    # @game.on "game:players:change", =>
-    #   @broadcastMessage "game:players:change", {}
-
-  removeClientWithUuid: (uuid) ->
-    clearTimeout(@clientCleanupTimeout) if @clientCleanupTimeout
-
-    @clientIdsToRemove.push uuid
-
-    @clientCleanupTimeout = setTimeout (=>
-      _.each @clientIdsToRemove, (uuid) =>
-        clientIndex = _.findIndex @clients, uuid: uuid
-        client = @clients[clientIndex]
-        @clients.splice(clientIndex, 1)
-        client.destructor()
-        client = null
-      @clientIdsToRemove = new Array()
-      @clientCleanupTimeout = null
-    ), 1000
+      if @game.players.length > 0
+        state = _.pick(@game, ['configuration', 'players'])
+        @broadcastMessage("game:state:change", state)
 
   compressMessage: (message) ->
-    lz4.compress message, outputEncoding: 'Base64'
+    lz4.compress message,
+      outputEncoding: 'Base64'
 
   decompressMessage: (message) ->
     lz4.decompress message,
@@ -54,17 +51,51 @@ module.exports = class
   decodeMessage: (message) ->
     JSON.parse @decompressMessage(message)
 
-  encodeMessage: (channel, data) ->
-    @compressMessage JSON.stringify({
-      channel: channel
-      block: @lastOutgoing || undefined
-      data: data
-    })
+  composeMessage: (channel, data) ->
+    channel: channel
+    data: data
 
-  broadcastMessage: (message) ->
-    @wss.clients.forEach (client) =>
-      @sendMessageTo(client, message)
+  broadcastMessage: (channel, data) ->
+    composed = @composeMessage(channel, data)
+    compressed = @compressMessage JSON.stringify(composed)
 
-  sendMessageTo: (client, message) ->
-    client.send(message)
+    disconnectIdx = new Array()
+    _.each @wss.clients, (client, idx) =>
+      if client.tmb.connected
+        @_sendMessageTo(client, compressed)
+      else
+        console.log 'Client should be disconnected', idx, client.tmb
+
+  sendMessage: (client, channel, data) ->
+    composed = JSON.stringify @composeMessage(channel, data)
+    compressed = @compressMessage composed
+    console.log '<<< ', JSON.stringify(client.tmb), composed
+    @_sendMessageTo(client, compressed)
+
+  _sendMessageTo: (client, message) ->
+    try
+      client.send(message)
+    catch e
+      console.log '_sendMessageTo', e, client
+
+
+  newPlayer: (socket, name) ->
+    player = new Player(name)
+
+    player.addBlob(
+      randomPosition(@game),
+      @game.configuration.startBlobMass
+    )
+
+    player.target = player.blobs[0].position
+
+    @game.addPlayer player
+
+    @sendMessage socket, 'join:success',
+      uuid: player.uuid
+
+    player
+
+  removePlayer: (playerUuid) ->
+    @game.removePlayer uuid: playerUuid
 
