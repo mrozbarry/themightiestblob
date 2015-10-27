@@ -17,8 +17,7 @@ class Player
     @blobs = new Array()
 
   addBlob: (position = (new MathExt.Vector()), mass = 1) ->
-    blob = new Blob(@colour, position, mass)
-    @blobs.push blob
+    @blobs.push new Blob(@colour, position, mass)
 
     @
 

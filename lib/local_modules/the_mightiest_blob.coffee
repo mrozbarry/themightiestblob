@@ -12,7 +12,7 @@ class TheMightiestBlob extends require('eventemitter3')
       maxPlayers: 16
       speedDecayPerTick: (1 / 2)
       timeStep: (1.0 / 60.0) * 1000
-      worldSize: 10000
+      worldSize: 2000
       startBlobMass: 1
     }, configuration
     @players = new Array()
@@ -33,13 +33,8 @@ class TheMightiestBlob extends require('eventemitter3')
     @
 
   removePlayer: (player) ->
-    unless player instanceof Player
-      throw new Error('TheMightiestBlob.removePlayer: accepts only a single instance of class Player')
-
-    index = _.findIndex @players, uuid: player.uuid
-    if index >= 0
-      @players = @players.splice(index, 1)
-      @emit "game:players:change"
+    @players = _.reject @players, uuid: player.uuid
+    @emit "game:players:change"
 
   allPlayerBlobs: ->
     _.reduce @players, ((allBlobs, player) ->

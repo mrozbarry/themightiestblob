@@ -24,6 +24,9 @@ class Blob
     @position.x += @velocity.x
     @position.y += @velocity.y
 
+    @position.x = Math.round(@position.x)
+    @position.y = Math.round(@position.y)
+
     @velocity.x /= configuration.speedDecayPerTick
     @velocity.y /= configuration.speedDecayPerTick
 
