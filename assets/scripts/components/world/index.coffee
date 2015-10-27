@@ -18,6 +18,9 @@ module.exports = Component.create
   componentDidMount: ->
     @refs.root.addEventListener 'mousemove', @handleMouseMotion, true
 
+  componentWillUnmount: ->
+    @refs.root.removeEventListener 'mousemove', @handleMouseMotion
+
   handleMouseMotion: (e) ->
     root = @refs.root
     boundingBox = root.getBoundingClientRect()
@@ -37,7 +40,7 @@ module.exports = Component.create
     ), average
 
   render: ->
-    { uuid, players } = @state
+    { gameState } = @props
 
     offset =
       x: @resolution.x / 2
@@ -94,7 +97,7 @@ module.exports = Component.create
             translateLine(0, -9999, 0, 9999)
           )
 
-          @props.gameState.players.map (player) ->
+          gameState.players.map (player) ->
             PlayerBlobs
               key: player.uuid
               player: player
