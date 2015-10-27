@@ -3,11 +3,11 @@
 module.exports = Component.create
   displayName: 'Components:PlayerBlobs'
 
-  rgbToCssString: (rgb, darken = 1.0) ->
-    "rgba(#{rgb.r / darken}, #{rgb.g / darken}, #{rgb.b / darken}, 1.0)"
+  rgbToCssString: (rgb, alpha) ->
+    "rgba(#{rgb.r}, #{rgb.g}, #{rgb.b}, #{alpha})"
 
   radiusOfBlob: (blob) ->
-    (Math.floor(blob.mass / 3) * 3) + 10
+    (Math.floor(blob.mass / 3) * 3) + 25
 
   render: ->
     { player } = @props
@@ -22,6 +22,6 @@ module.exports = Component.create
           cy: center.y
           strokeWidth: '5px'
           style:
-            fill: @rgbToCssString(blob.colour, 1.0)
-            stroke: @rgbToCssString(blob.colour, 2.0)
+            fill: @rgbToCssString(blob.colour, 0.75)
+            stroke: @rgbToCssString(blob.colour, 1.0)
 

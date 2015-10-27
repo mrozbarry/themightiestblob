@@ -1,7 +1,5 @@
 require('./styles/index.sass')
 
-# Player = require('../../../../lib/local_modules/player')
-# Blob = require('../../../../lib/local_modules/blob')
 MathExt = require('../../../../lib/local_modules/math_ext')
 
 { svg, rect, g, line } = React.DOM
@@ -13,38 +11,69 @@ module.exports = Component.create
 
   resolution: new MathExt.Vector(1920, 1080)
 
-  # mixins: WorldMixins
-
-  componentDidMount: ->
-    @refs.root.addEventListener 'mousemove', @handleMouseMotion, true
-
-  componentWillUnmount: ->
-    @refs.root.removeEventListener 'mousemove', @handleMouseMotion
-
   handleMouseMotion: (e) ->
-    root = @refs.root
-    boundingBox = root.getBoundingClientRect()
-    # console.log 'handleMouseMotion.boundingBox', boundingBox.left, boundingBox.top, boundingBox.width, boundingBox.height
-    # console.debug '                         (', [e.clientX, e.clientY],')'
-    # TODO: send this to the server
+    { gameState, uuid } = @props
 
-  myBlobs: (playerUuid, allBlobs) ->
-    _.select allBlobs, (blob) ->
-      blob.playerUuid == playerUuid
+    console.log 'handleMouseMotion', @props
+
+    return unless uuid
+
+    boundingBox = e.target.getBoundingClientRect()
+    console.debug 
+
+    local =
+      x: (e.clientX / boundingBox.width) * @resolution.x
+      y: (e.clientY / boundingBox.height) * @resolution.y
+
+    me = _.find gameState.players, uuid: uuid
+    camera = @cameraTarget(me)
+
+    world =
+      x: camera.x + local.x
+      y: camera.y + local.y
+
+    @props.setTarget(world)
+
+  handleMouseLeave: (e) ->
+    { gameState, uuid } = @props
+
+    console.log 'handleMouseLeave', @props
+
+    return unless uuid
+
+    me = _.find gameState.players, uuid: uuid
+    centroid = @averageBlobPosition(me.blobs)
+
+    @props.setTarget(centroid)
 
   averageBlobPosition: (blobs) ->
     return new MathExt.Vector() unless blobs.length > 0
     average = blobs[0].position
-    _.reduce blobs, ((centeroid, blob) ->
-      centeroid.add(blob.position).divide(2)
+    _.reduce blobs, ((centroid, blob) ->
+      centroid.x = (centroid.x + blob.position.x) / 2
+      centroid.y = (centroid.y + blob.position.y) / 2
+      centroid
     ), average
 
-  render: ->
-    { gameState } = @props
+  cameraTarget: (player) ->
+    { gameState, uuid } = @props
 
     offset =
       x: @resolution.x / 2
       y: @resolution.y / 2
+
+    if player
+      centroid = @averageBlobPosition(player.blobs)
+      offset.x -= centroid.x
+      offset.y -= centroid.y
+
+    offset
+
+  render: ->
+    { gameState, uuid } = @props
+
+    me = _.find gameState.players, uuid: uuid
+    offset = @cameraTarget(me)
 
     translateAxis = (value, axis) ->
       unless _.contains ['x', 'y'], axis
@@ -76,9 +105,10 @@ module.exports = Component.create
         width: @resolution.x
         height: @resolution.y
         className: 'blobs-world__background'
+        onMouseMove: @handleMouseMotion
+        onMouseLeave: @handleMouseLeave
 
       svg
-        ref: 'renderer'
         x: 0
         y: 0
         width: @resolution.x

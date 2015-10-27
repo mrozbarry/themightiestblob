@@ -52,7 +52,7 @@ module.exports = Component.create
 
   sendMessage: (channel, data) ->
     raw = @createMessage(channel, data)
-    console.log '<<< ', raw
+    # console.log '<<< ', raw
     message = lz4.compress raw,
       outputEncoding: 'Base64'
 
@@ -65,6 +65,9 @@ module.exports = Component.create
   leaveGame: ->
     @sendMessage "client:leave", {}
 
+  setTarget: (position) ->
+    console.log 'setTarget', position.x, position.y
+
   componentWillMount: ->
     @connectSocket()
 
@@ -72,7 +75,7 @@ module.exports = Component.create
     @leaveGame()
 
   processMessage: (message) ->
-    console.log '>>> ', message.channel, message.data
+    # console.log '>>> ', message.channel, message.data
     switch message.channel
       when "server:hello"
         @setState connected: true
@@ -81,7 +84,7 @@ module.exports = Component.create
         @setState uuid: message.data.uuid
 
       when "game:state:change"
-        console.debug 'state change', message.data
+        # console.debug 'state change', message.data
         @setState gameState: message.data
 
   render: ->
@@ -97,6 +100,8 @@ module.exports = Component.create
           joinGame: @joinGame
       World
         gameState: @state.gameState
+        uuid: @state.uuid
+        setTarget: @setTarget
 
   renderWaiting: ->
     React.DOM.div {},

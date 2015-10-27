@@ -15,8 +15,8 @@ random = (min, max, filter = ((n) -> n)) ->
 
 randomPosition = (game) ->
   new MathExt.Vector(
-    random(0, game.configuration.worldSize, parseInt)
-    random(0, game.configuration.worldSize, parseInt)
+    random(game.configuration.worldSize / -2, game.configuration.worldSize / 2, parseInt)
+    random(game.configuration.worldSize / -2, game.configuration.worldSize / 2, parseInt)
   )
 
 

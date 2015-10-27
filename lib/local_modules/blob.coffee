@@ -18,7 +18,7 @@ class Blob
     @colour ||= randomColour()
 
   radius: ->
-    (Math.floor(@mass / 3) * 3) + 10
+    (Math.floor(@mass / 3) * 3) + 25
 
   update: (configuration) ->
     @position.x += @velocity.x
