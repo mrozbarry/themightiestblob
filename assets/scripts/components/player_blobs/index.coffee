@@ -6,18 +6,18 @@ module.exports = Component.create
   rgbToCssString: (rgb, darken = 1.0) ->
     "rgba(#{rgb.r / darken}, #{rgb.g / darken}, #{rgb.b / darken}, 1.0)"
 
+  radiusOfBlob: (blob) ->
+    (Math.floor(blob.mass / 3) * 3) + 10
+
   render: ->
     { player } = @props
-
-    console.log 'PlayerBlobs.player', player
-
 
     g className: 'blobs__blobs',
       player.blobs.map (blob) =>
         center = @props.translatePoint(blob.position.x, blob.position.y)
         circle
           key: blob.uuid
-          r: blob.radius()
+          r: @radiusOfBlob(blob)
           cx: center.x
           cy: center.y
           strokeWidth: '5px'
