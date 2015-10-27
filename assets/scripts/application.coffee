@@ -1,6 +1,7 @@
 WebSocket = require('ws')
 lz4       = require('lzutf8')
-Login     = require('./components/login/index')
+
+JoinModal     = require('./components/join_modal/index')
 World     = require('./components/world/index')
 
 TheMightiestBlob = require('../../lib/local_modules/the_mightiest_blob')
@@ -12,9 +13,7 @@ module.exports = Component.create
   socket: null
 
   getInitialState: ->
-    userName: 'demo'
-    userId: null
-    connected: false
+    uuid: null
     gameState:
       configuration: {}
       players: new Array()
@@ -27,14 +26,17 @@ module.exports = Component.create
     @socket = new WebSocket(websocketHost)
 
     @socket.onopen = =>
-      console.debug 'App.didMount.socket.open'
+      console.debug 'socket.open'
 
     @socket.onerror = (e) =>
-      console.error 'App.didMount.socket.error', e
+      console.error 'socket.error', e
 
     @socket.onclose = =>
-      console.warn 'App.didMount.socket.close'
-      @setState connected: false, userId: null
+      console.warn 'socket.close'
+      @setState @getInitialState(), =>
+        setTimeout (=>
+          @connectSocket()
+        ), 5000
 
     @socket.onmessage = (e) =>
       raw = lz4.decompress e.data,
@@ -45,44 +47,61 @@ module.exports = Component.create
   createMessage: (channel, data) ->
     JSON.stringify({
       channel: channel
-      block: 'TODO: Store message'
       data: data
     })
 
   sendMessage: (channel, data) ->
     raw = @createMessage(channel, data)
+    console.log '<<< ', raw
     message = lz4.compress raw,
       outputEncoding: 'Base64'
 
     @socket.send message
 
+  joinGame: (name) ->
+    @sendMessage "client:join",
+      name: name
+
+  leaveGame: ->
+    @sendMessage "client:leave", {}
+
   componentWillMount: ->
     @connectSocket()
 
+  componentWillUnmount: ->
+    @leaveGame()
+
   processMessage: (message) ->
-    console.log 'processMessage', message.channel, message.data
+    console.log '>>> ', message.channel, message.data
     switch message.channel
       when "server:hello"
-        @sendMessage "client:join",
-          name: @state.userName
-
         @setState connected: true
+
+      when "join:success"
+        @setState uuid: message.data.uuid
 
       when "game:state:change"
         console.debug 'state change', message.data
         @setState gameState: message.data
 
-
   render: ->
-    if @state.connected
+    if @socket.readyState == WebSocket.prototype.OPEN
       @renderConnected()
     else
       @renderWaiting()
 
   renderConnected: ->
-    World
-      gameState: @state.gameState
+    React.DOM.div {},
+      unless @state.uuid
+        JoinModal
+          joinGame: @joinGame
+      World
+        gameState: @state.gameState
 
   renderWaiting: ->
-    React.DOM.div {}, 'Connecting to server...'
+    React.DOM.div {},
+      unless @state.uuid
+        JoinModal
+          joinGame: @joinGame
+      'Connecting to server...'
 
