@@ -103,7 +103,7 @@ module.exports = Component.create
     offset
 
   render: ->
-    { gameState, uuid } = @props
+    { gameState, lastGameState, uuid } = @props
 
     me = _.find gameState.players, uuid: uuid
     offset = @cameraTarget(me)

@@ -23,6 +23,8 @@ module.exports = Component.create
       configuration: {}
       players: new Array()
 
+    lastGameState: null
+
   connectSocket: ->
     host = ["ws://", window.location.hostname]
     host = host.concat [":", window.location.port] if window.location.port != ""
@@ -101,7 +103,8 @@ module.exports = Component.create
 
       when "game:state:change"
         # console.debug 'state change', message.data
-        @setState gameState: message.data
+        lastGameState = @state.gameState
+        @setState gameState: message.data, lastGameState: lastGameState
 
   render: ->
     if @socket.readyState == WebSocket.prototype.OPEN
@@ -117,6 +120,7 @@ module.exports = Component.create
           previous: @state.previous
       World
         gameState: @state.gameState
+        lastGameState: @state.lastGameState
         uuid: @state.uuid
         setTarget: @setTarget
         setSplit: @setSplit

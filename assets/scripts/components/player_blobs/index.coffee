@@ -1,3 +1,5 @@
+require('./styles/index.css')
+
 { g, circle, text } = React.DOM
 
 module.exports = Component.create
@@ -19,6 +21,7 @@ module.exports = Component.create
         g
           key: blob.uuid,
           circle
+            className: 'player-blob'
             r: radius
             cx: center.x
             cy: center.y
