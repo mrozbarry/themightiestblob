@@ -24,6 +24,7 @@ module.exports = {
     loaders: [
       { test: /\.sass$/, loader: "style-loader!css-loader!sass?indentedSyntax" },
       { test: /\.scss$/, loader: "style-loader!css-loader!sass" },
+      { test: /\.css$/, loader: "style-loader!css-loader" },
       { test: /\.coffee$/, loader: "coffee-loader" },
       { test: /\.json$/, loader: "json-loader"},
       { test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
