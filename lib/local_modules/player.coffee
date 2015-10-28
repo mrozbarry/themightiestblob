@@ -26,21 +26,52 @@ class Player
 
     @
 
-  calculateVelocityForBlob: (blob) ->
-    diff = @target.subtract(blob.position)
-    dist = @target.distance(blob.position)
-    if dist < 5
-      blob.velocity = new MathExt.Vector()
+  collisionList: (blob, otherBlobs) ->
+    _.select otherBlobs, (otherBlob) ->
+      return false if otherBlob.uuid == blob.uuid
+      smallestDistance = blob.radius() + otherBlob.radius()
+      dist = blob.position.distance(otherBlob.position)
 
-    else
+      if dist < smallestDistance
+        unit = blob.position.subtract(otherBlob.position) #.divide(dist).multiply(smallestDistance)
+
+        unit = new MathExt.Vector(smallestDistance, smallestDistance) unless dist
+
+        console.log 'Attempting to separate blobs', blob.position, otherBlob.position
+        console.log '---', dist, smallestDistance, unit
+
+        blob.velocity = blob.velocity.add(unit)
+        otherBlob.velocity = otherBlob.velocity.subtract(unit)
+
+        true
+      else
+        false
+
+
+  calculateVelocityForBlob: (blob, otherBlobs) ->
+    force = new MathExt.Vector()
+
+    dist = @target.distance(blob.position)
+    if dist >= 5
+      diff = @target.subtract(blob.position)
       direction = diff.divide(dist)
 
-      blob.velocity = direction.multiply(Math.max(Math.min(dist, 100), 1) / 2).divide(blob.mass * 2)
+      force = direction
+        .multiply(Math.max(Math.min(dist, 200), 1))
+        .divide(blob.mass)
+
+    console.log '-'
+    console.log 'calculateVelocityForBlob.before', blob.velocity
+    blob.velocity = blob.velocity.add(force)
+    console.log 'calculateVelocityForBlob.after', blob.velocity
+
     blob
 
-  update: (configuration) ->
+  update: (configuration, allBlobs) ->
     @blobs = _.map @blobs, (blob) =>
-      nextBlob = @calculateVelocityForBlob(blob)
+      collisionBlobs = _.reject allBlobs, uuid: blob.uuid
+      nextBlob = @calculateVelocityForBlob(blob, collisionBlobs)
+      collisions = @collisionList(blob, allBlobs)
       nextBlob.update(configuration)
       nextBlob
 
@@ -52,7 +83,8 @@ class Player
       return null if newMass < 1
       blob.mass = newMass
 
-      newBlob = new Blob(@colour, @position, newMass)
+      newBlob = new Blob(blob.colour, blob.position, newMass)
+      # newBlob.velocity = blob.velocity.multiply(2)
       newBlob
 
     @blobs = @blobs.concat(newBlobs)

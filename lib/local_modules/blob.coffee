@@ -10,13 +10,11 @@ randomColour = ->
 
 
 class Blob
-  position: new MathExt.Vector()
-  velocity: new MathExt.Vector()
-  connectingBlobs: new Array()
-
   constructor: (@colour, @position = (new MathExt.Vector()), @mass = 1) ->
     @uuid = uuid.v4()
     @colour ||= randomColour()
+    @position = new MathExt.Vector()
+    @velocity = new MathExt.Vector()
 
   radius: ->
     (Math.floor(@mass / 3) * 3) + 25
@@ -28,9 +26,13 @@ class Blob
     @position.x = Math.min(Math.max(0, @position.x), configuration.worldSize)
     @position.y = Math.min(Math.max(0, @position.y), configuration.worldSize)
 
+    if @position.x == 0 || @position.x == configuration.worldSize
+      @velocity.x = 0
 
-    @velocity.x /= (configuration.speedDecayPerTick)
-    @velocity.y /= (configuration.speedDecayPerTick)
+    if @position.y == 0 || @position.y == configuration.worldSize
+      @velocity.y = 0
+
+    @velocity = @velocity.divide(configuration.speedDecayPerTick * @mass)
 
     @
 

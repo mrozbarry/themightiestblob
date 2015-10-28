@@ -92,9 +92,12 @@ class TheMightiestBlob extends require('eventemitter3')
 
   gameStep: ->
     @accumulator += @gameStepDelta(Date.now())
+
+    allPlayerBlobs = @allPlayerBlobs()
+
     while @accumulator > @configuration.timeStep
       @players = _.map @players, (player) =>
-        player.update(@configuration)
+        player.update(@configuration, allPlayerBlobs)
 
       @accumulator -= @configuration.timeStep
 
