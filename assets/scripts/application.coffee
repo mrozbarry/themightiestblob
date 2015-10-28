@@ -1,5 +1,6 @@
 WebSocket = require('ws')
 lz4       = require('lzutf8')
+sillyname = require('sillyname')
 
 JoinModal     = require('./components/join_modal/index')
 World     = require('./components/world/index')
@@ -14,6 +15,10 @@ module.exports = Component.create
 
   getInitialState: ->
     uuid: null
+    previous:
+      name: sillyname()
+      mass: 1
+
     gameState:
       configuration: {}
       players: new Array()
@@ -58,15 +63,26 @@ module.exports = Component.create
 
     @socket.send message
 
-  joinGame: (name) ->
+  joinGame: (name, mass) ->
     @sendMessage "client:join",
       name: name
+      mass: mass
+
+    @setState previous: {
+      name: name
+      mass: mass
+    }
 
   leaveGame: ->
     @sendMessage "client:leave", {}
 
   setTarget: (position) ->
-    console.log 'setTarget', position.x, position.y
+    return unless @state.uuid
+    @sendMessage "client:target", position
+
+  setSplit: ->
+    return unless @state.uuid
+    @sendMessage "client:split", {}
 
   componentWillMount: ->
     @connectSocket()
@@ -98,15 +114,18 @@ module.exports = Component.create
       unless @state.uuid
         JoinModal
           joinGame: @joinGame
+          previous: @state.previous
       World
         gameState: @state.gameState
         uuid: @state.uuid
         setTarget: @setTarget
+        setSplit: @setSplit
 
   renderWaiting: ->
     React.DOM.div {},
       unless @state.uuid
         JoinModal
           joinGame: @joinGame
+          previous: @state.previous
       'Connecting to server...'
 

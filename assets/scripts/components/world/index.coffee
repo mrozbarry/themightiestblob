@@ -5,39 +5,41 @@ MathExt = require('../../../../lib/local_modules/math_ext')
 { svg, rect, g, line } = React.DOM
 
 PlayerBlobs = require('../player_blobs/index')
+Grid = require('../grid/index')
 
 module.exports = Component.create
   displayName: 'Components:World'
 
   resolution: new MathExt.Vector(1920, 1080)
 
+  localMouse: {}
+  lastTarget: {}
+  isMouseActive: false
+  mode: 'play'
+
+  componentDidMount: ->
+    addEventListener 'keydown', @handleKeyPress, true
+
+  componentWillUnmount: ->
+    removeEventListener 'keydown', @handleKeyPress
+
   handleMouseMotion: (e) ->
     { gameState, uuid } = @props
 
-    console.log 'handleMouseMotion', @props
-
     return unless uuid
 
-    boundingBox = e.target.getBoundingClientRect()
-    console.debug 
+    dom = @refs.root
 
-    local =
-      x: (e.clientX / boundingBox.width) * @resolution.x
-      y: (e.clientY / boundingBox.height) * @resolution.y
-
-    me = _.find gameState.players, uuid: uuid
-    camera = @cameraTarget(me)
-
-    world =
-      x: camera.x + local.x
-      y: camera.y + local.y
-
-    @props.setTarget(world)
+    point = dom.createSVGPoint()
+    point.x = e.clientX
+    point.y = e.clientY
+    local = point.matrixTransform(dom.getScreenCTM().inverse())
+    @localMouse.x = parseInt(local.x)
+    @localMouse.y = parseInt(local.y)
+    @isMouseActive = true
 
   handleMouseLeave: (e) ->
     { gameState, uuid } = @props
-
-    console.log 'handleMouseLeave', @props
 
     return unless uuid
 
@@ -45,10 +47,41 @@ module.exports = Component.create
     centroid = @averageBlobPosition(me.blobs)
 
     @props.setTarget(centroid)
+    @isMouseActive = false
+
+  handleKeyPress: (e) ->
+    { uuid } = @props
+
+    return unless uuid
+
+    # e.preventDefault()
+
+    console.log 'keyPress', e
+
+    if @mode == 'play'
+      if e.keyCode == 32
+        @props.setSplit()
+
+  sendTarget: (camera) ->
+    world =
+      x: camera.x + @localMouse.x
+      y: camera.y + @localMouse.y
+
+    same =
+      x: (world.x == @lastTarget.x)
+      y: (world.y == @lastTarget.y)
+
+    return if same.x && same.y
+
+    @lastTarget = world
+
+    @props.setTarget(world)
 
   averageBlobPosition: (blobs) ->
-    return new MathExt.Vector() unless blobs.length > 0
+    return @resolution.divide(-2) unless blobs.length > 0
+
     average = blobs[0].position
+
     _.reduce blobs, ((centroid, blob) ->
       centroid.x = (centroid.x + blob.position.x) / 2
       centroid.y = (centroid.y + blob.position.y) / 2
@@ -64,8 +97,8 @@ module.exports = Component.create
 
     if player
       centroid = @averageBlobPosition(player.blobs)
-      offset.x -= centroid.x
-      offset.y -= centroid.y
+      offset.x = centroid.x - offset.x
+      offset.y = centroid.y - offset.y
 
     offset
 
@@ -75,11 +108,13 @@ module.exports = Component.create
     me = _.find gameState.players, uuid: uuid
     offset = @cameraTarget(me)
 
+    @sendTarget(offset) if @isMouseActive
+
     translateAxis = (value, axis) ->
       unless _.contains ['x', 'y'], axis
         throw new Error('translateAxis expects axis to be "x" or "y"')
 
-      value + offset[axis]
+      value - offset[axis]
 
     translatePoint = (x, y) ->
       x: translateAxis(x, 'x')
@@ -97,7 +132,9 @@ module.exports = Component.create
       className: 'blobs-world'
       viewBox: "0 0 #{@resolution.x} #{@resolution.y}",
       preserveAspectRatio: 'xMidYMid'
-      ref: 'root',
+      ref: 'root'
+      onMouseMove: @handleMouseMotion
+      onMouseLeave: @handleMouseLeave,
 
       rect
         x: 0
@@ -105,8 +142,6 @@ module.exports = Component.create
         width: @resolution.x
         height: @resolution.y
         className: 'blobs-world__background'
-        onMouseMove: @handleMouseMotion
-        onMouseLeave: @handleMouseLeave
 
       svg
         x: 0
@@ -115,17 +150,15 @@ module.exports = Component.create
         height: @resolution.y,
 
         g {},
-          # transform: "translate(#{translation.x}, #{translation.y})",
 
-          line _.extend(
-            stroke: '#ff00ff',
-            translateLine(-9999, 0, 9999, 0)
-          )
-
-          line _.extend(
-            stroke: '#ff00ff',
-            translateLine(0, -9999, 0, 9999)
-          )
+          Grid
+            xMin: 0
+            yMin: 0
+            xMax: gameState.configuration.worldSize
+            yMax: gameState.configuration.worldSize
+            spacing: 100
+            colour: '#00aaaa'
+            translateAxis: translateAxis
 
           gameState.players.map (player) ->
             PlayerBlobs

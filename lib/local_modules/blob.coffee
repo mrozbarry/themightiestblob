@@ -1,5 +1,6 @@
 MathExt = require('./math_ext')
 uuid = require('uuid')
+_ = require('lodash')
 
 randomColour = ->
   rgb = _.sample [0...256], 3
@@ -24,11 +25,12 @@ class Blob
     @position.x += @velocity.x
     @position.y += @velocity.y
 
-    @position.x = Math.round(@position.x)
-    @position.y = Math.round(@position.y)
+    @position.x = Math.min(Math.max(0, @position.x), configuration.worldSize)
+    @position.y = Math.min(Math.max(0, @position.y), configuration.worldSize)
 
-    @velocity.x /= configuration.speedDecayPerTick
-    @velocity.y /= configuration.speedDecayPerTick
+
+    @velocity.x /= (configuration.speedDecayPerTick)
+    @velocity.y /= (configuration.speedDecayPerTick)
 
     @
 

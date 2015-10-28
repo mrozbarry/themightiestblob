@@ -1,4 +1,4 @@
-{ g, circle } = React.DOM
+{ g, circle, text } = React.DOM
 
 module.exports = Component.create
   displayName: 'Components:PlayerBlobs'
@@ -15,13 +15,32 @@ module.exports = Component.create
     g className: 'blobs__blobs',
       player.blobs.map (blob) =>
         center = @props.translatePoint(blob.position.x, blob.position.y)
-        circle
-          key: blob.uuid
-          r: @radiusOfBlob(blob)
-          cx: center.x
-          cy: center.y
-          strokeWidth: '5px'
-          style:
-            fill: @rgbToCssString(blob.colour, 0.75)
-            stroke: @rgbToCssString(blob.colour, 1.0)
+        radius = @radiusOfBlob(blob)
+        g
+          key: blob.uuid,
+          circle
+            r: radius
+            cx: center.x
+            cy: center.y
+            strokeWidth: '5px'
+            style:
+              fill: @rgbToCssString(blob.colour, 0.75)
+              stroke: @rgbToCssString(blob.colour, 1.0)
+          text
+            x: center.x
+            y: center.y
+            textAnchor: 'middle'
+            style: {
+              fontSize: '16px'
+            },
+            player.name
+
+          text
+            x: center.x
+            y: center.y + radius + 20
+            textAnchor: 'start'
+            style: {
+              fontSize: '16px'
+            },
+            "<#{Math.round(blob.position.x)}, #{Math.round(blob.position.y)}>"
 

@@ -26,23 +26,38 @@ class Player
 
     @
 
-  calculateVelocityFromTarget: (blob) ->
+  calculateVelocityForBlob: (blob) ->
     diff = @target.subtract(blob.position)
     dist = @target.distance(blob.position)
-    if dist < 0.1
+    if dist < 5
       blob.velocity = new MathExt.Vector()
+
     else
       direction = diff.divide(dist)
 
-      blob.velocity = direction.divide(blob.mass)
+      blob.velocity = direction.multiply(Math.max(Math.min(dist, 100), 1) / 2).divide(blob.mass * 2)
     blob
 
   update: (configuration) ->
     @blobs = _.map @blobs, (blob) =>
-      @calculateVelocityFromTarget(blob)
-        .update(configuration)
+      nextBlob = @calculateVelocityForBlob(blob)
+      nextBlob.update(configuration)
+      nextBlob
 
     @
+
+  splitAllBlobs: ->
+    newBlobs = _.compact _.map @blobs, (blob) =>
+      newMass = Math.floor(blob.mass / 2)
+      return null if newMass < 1
+      blob.mass = newMass
+
+      newBlob = new Blob(@colour, @position, newMass)
+      newBlob
+
+    @blobs = @blobs.concat(newBlobs)
+
+
 
 module.exports = Player
 

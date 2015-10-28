@@ -12,8 +12,6 @@ module.exports = (server, socket) ->
 
   socket.on "message", (data, flags) ->
     message = server.decodeMessage(data)
-    console.log '>>> ', message
-    console.log '>>> ', Object.keys(message)
 
     switch message.channel
       when "client:broadcast:chat"
@@ -21,17 +19,20 @@ module.exports = (server, socket) ->
           playerUuid: @player.uuid
           text: payload.text
 
-      # when "client:send:input"
-      #   server.queueInput socket.tmb.playerUuid, message.data
-
       when "client:join"
-        player = server.newPlayer(socket, message.data.name)
+        player = server.newPlayer(socket, message.data.name, message.data.mass)
         socket.tmb.playerUuid = player.uuid
 
       when "client:leave"
         socket.tmb.connected = false
         server.removePlayer(socket.tmb.playerUuid)
         socket.close()
+
+      when "client:target"
+        server.setPlayerTarget(socket.tmb.playerUuid, message.data)
+
+      when "client:split"
+        server.setPlayerSplit(socket.tmb.playerUuid)
 
   socket.on "close", ->
     socket.tmb.connected = false

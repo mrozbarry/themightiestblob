@@ -9,14 +9,14 @@ _ = require('lodash')
 lz4 = require('lzutf8')
 md5 = require('js-md5')
 
-random = (min, max, filter = ((n) -> n)) ->
+random = (min, max) ->
   diff = max - min
-  filter((Math.random() * diff) + min)
+  (Math.random() * diff) + min
 
 randomPosition = (game) ->
   new MathExt.Vector(
-    random(game.configuration.worldSize / -2, game.configuration.worldSize / 2, parseInt)
-    random(game.configuration.worldSize / -2, game.configuration.worldSize / 2, parseInt)
+    random(0, game.configuration.worldSize)
+    random(0, game.configuration.worldSize)
   )
 
 
@@ -24,11 +24,13 @@ module.exports = class
   constructor: (server) ->
     @game = new TheMightiestBlob(
       maxPlayers: 5
-      worldSize: 500
+      worldSize: 3000
     )
-    @wss = new WebSocketServer {server: server}
+    @wss = new WebSocketServer {
+      server: server
+      clientTracking: true
+    }
     @lastGameState = null
-
 
   run: ->
     @wss.on "connection", (ws) =>
@@ -69,22 +71,21 @@ module.exports = class
   sendMessage: (client, channel, data) ->
     composed = JSON.stringify @composeMessage(channel, data)
     compressed = @compressMessage composed
-    console.log '<<< ', JSON.stringify(client.tmb), composed
     @_sendMessageTo(client, compressed)
 
   _sendMessageTo: (client, message) ->
     try
       client.send(message)
     catch e
-      console.log '_sendMessageTo', e, client
+      console.log '_sendMessageTo', client.tmb
 
 
-  newPlayer: (socket, name) ->
+  newPlayer: (socket, name, mass) ->
     player = new Player(name)
 
     player.addBlob(
       randomPosition(@game),
-      @game.configuration.startBlobMass
+      mass || @game.configuration.startBlobMass
     )
 
     player.target = player.blobs[0].position
@@ -98,4 +99,23 @@ module.exports = class
 
   removePlayer: (playerUuid) ->
     @game.removePlayer uuid: playerUuid
+
+  setPlayerTarget: (playerUuid, target) ->
+    return unless playerUuid
+    player = _.find @game.players, uuid: playerUuid
+    return unless player
+
+    player.target = new MathExt.Vector(
+      target.x,
+      target.y
+    )
+
+  setPlayerSplit: (playerUuid, target) ->
+    return unless playerUuid
+    player = _.find @game.players, uuid: playerUuid
+    return unless player
+
+    player.splitAllBlobs()
+
+
 
