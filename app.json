@@ -4,7 +4,7 @@
   "repository": "https://github.com/mrozbarry/themightiestblob",
   "website": "http://mrbarry.com",
   "scripts": {
-    "postdeploy": "npm compile"
+    "postdeploy": "npm run compile"
   },
   "success_url": "/"
 }
