@@ -27923,12 +27923,15 @@
 	    };
 	  },
 	  connectSocket: function() {
-	    var host, websocketHost;
-	    host = ["ws://", window.location.hostname];
+	    var host, isSecure, websocketHost;
+	    isSecure = window.location.protocol === "https:";
+	    console.debug('Application.connectSocket', window.location.protocol, isSecure);
+	    host = [isSecure === "https:" ? "wss://" : "ws://", window.location.hostname];
 	    if (window.location.port !== "") {
 	      host = host.concat([":", window.location.port]);
 	    }
-	    websocketHost = host.join('');
+	    websocketHost = host.join;
+	    console.debug(' ->', websocketHost);
 	    this.socket = new WebSocket(websocketHost);
 	    this.socket.onopen = (function(_this) {
 	      return function() {
