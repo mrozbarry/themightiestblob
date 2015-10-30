@@ -84,7 +84,7 @@ module.exports = Component.create
 
   setSplit: ->
     return unless @state.uuid
-    @sendMessage "client:split", {}
+    # @sendMessage "client:split", {}
 
   componentWillMount: ->
     @connectSocket()
@@ -93,7 +93,6 @@ module.exports = Component.create
     @leaveGame()
 
   processMessage: (message) ->
-    # console.log '>>> ', message.channel, message.data
     switch message.channel
       when "server:hello"
         @setState connected: true

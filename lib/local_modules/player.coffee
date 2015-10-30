@@ -71,7 +71,7 @@ class Player
     @blobs = _.map @blobs, (blob) =>
       collisionBlobs = _.reject allBlobs, uuid: blob.uuid
       nextBlob = @calculateVelocityForBlob(blob, collisionBlobs)
-      collisions = @collisionList(blob, allBlobs)
+      # collisions = @collisionList(blob, allBlobs)
       nextBlob.update(configuration)
       nextBlob
 
