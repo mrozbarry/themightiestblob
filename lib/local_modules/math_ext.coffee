@@ -14,6 +14,7 @@ class Vector
     new Vector(@x * number, @y * number)
 
   divide: (number) ->
+    return new Vector() if number == 0
     new Vector(@x / number, @y / number)
 
   distance: (other) ->

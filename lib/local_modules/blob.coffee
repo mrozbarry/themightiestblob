@@ -32,7 +32,10 @@ class Blob
     if @position.y == 0 || @position.y == configuration.worldSize
       @velocity.y = 0
 
-    @velocity = @velocity.divide(configuration.speedDecayPerTick * @mass)
+    speed = (new MathExt.Vector()).distance(@velocity)
+    slow = speed / @mass
+
+    @velocity = @velocity.divide(configuration.speedDecayPerTick * slow)
 
     @
 

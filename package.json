@@ -16,6 +16,9 @@
     "sat": "^0.5.0",
     "sillyname": "^0.1.0",
     "uuid": "^2.0.1",
+    "verlet-constraint": "^1.0.3",
+    "verlet-point": "^1.2.1",
+    "verlet-system": "^1.0.15",
     "ws": "^0.8.0"
   },
   "devDependencies": {
@@ -42,6 +45,7 @@
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --opts spec/mocha.opts spec",
+    "compile": "webpack --config config/webpack.production.config.js",
     "start": "coffee server/index.coffee"
   }
 }

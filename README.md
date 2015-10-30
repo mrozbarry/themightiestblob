@@ -1,3 +1,5 @@
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 # Multiplayer Blob Game
 
 Built with [react-flux-webpack-starter](https://github.com/pairshaped/react-flux-webpack-starter)
@@ -6,7 +8,7 @@ Built with [react-flux-webpack-starter](https://github.com/pairshaped/react-flux
 
  - [x] Network sync code
  - [ ] Nicer way to change username/start mass (right now, it's a refresh on the client side)
- - [ ] Integrate with SAT 2d Physics Collision Library (Was going to use Grid2, but it has no documentation or sensible examples)
+ - [ ] Integrate with verlet-* physics integration libraries, using SAT for collision detection
  - [ ] Interpolate movement on the client to reduce jitter.  May just end up running the simulation at a higher tick-rate client-side to do physics only.
  - [ ] Consumption mechanics
    - [ ] 1st mode: Blobs can fight multiple blobs, challenging 1 mass unit per server tick.
@@ -15,7 +17,7 @@ Built with [react-flux-webpack-starter](https://github.com/pairshaped/react-flux
 # Install
 
 ```bash
-npm install
+$ npm install
 ```
 
 # Running
@@ -23,18 +25,17 @@ npm install
 Run the development server
 
 ```bash
-npm start
+$ npm start
 ```
 
 Build production javascript bundle
 
 ```bash
-npm run build
+$ npm run compile
+$ npm start
 ```
 
 # Unit Testing
-
-*These are probably broken, will be fixing them soon!*
 
 ```bash
 npm test

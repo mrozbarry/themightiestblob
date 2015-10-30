@@ -51,6 +51,9 @@ server = http.createServer(app)
 server.listen port, ->
   console.log "http server listening on %d", port
 
-
 game = new GameServer(server)
 game.run()
+
+app.get '*', (req, res) ->
+  res.sendFile path.join(__dirname, '..', 'public', 'index.html')
+
