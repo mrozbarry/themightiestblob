@@ -7,7 +7,7 @@ WebpackHotMiddleware = require("webpack-hot-middleware")
 webpackConfig = require("../config/webpack.config.js")
 
 # ---
-#
+
 http = require("http")
 express = require("express")
 path = require("path")
@@ -21,11 +21,12 @@ GameServer = require("./game_server")
 
 publicPath = path.resolve(__dirname, '..', 'public')
 
+app = express()
+
 app.set 'port', process.env.PORT || 5000
 
 development = -> process.env.NODE_ENV != 'production'
 
-app = express()
 
 app.use express.static(publicPath)
 
