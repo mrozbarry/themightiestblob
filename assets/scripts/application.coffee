@@ -26,7 +26,11 @@ module.exports = Component.create
     lastGameState: null
 
   connectSocket: ->
-    host = ["ws://", window.location.hostname]
+    isSecure = window.locaiton.protocol == "https:"
+    host = [
+      if isSecure == "https:" then "wss://" else "ws://"
+      window.location.hostname
+    ]
     host = host.concat [":", window.location.port] if window.location.port != ""
     websocketHost = host.join('')
 
