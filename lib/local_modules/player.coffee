@@ -37,9 +37,6 @@ class Player
 
         unit = new MathExt.Vector(smallestDistance, smallestDistance) unless dist
 
-        console.log 'Attempting to separate blobs', blob.position, otherBlob.position
-        console.log '---', dist, smallestDistance, unit
-
         blob.velocity = blob.velocity.add(unit)
         otherBlob.velocity = otherBlob.velocity.subtract(unit)
 
@@ -60,10 +57,7 @@ class Player
         .multiply(Math.max(Math.min(dist, 200), 1))
         .divide(blob.mass)
 
-    console.log '-'
-    console.log 'calculateVelocityForBlob.before', blob.velocity
     blob.velocity = blob.velocity.add(force)
-    console.log 'calculateVelocityForBlob.after', blob.velocity
 
     blob
 

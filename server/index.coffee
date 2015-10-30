@@ -21,7 +21,7 @@ GameServer = require("./game_server")
 
 publicPath = path.resolve(__dirname, '..', 'public')
 
-port = process.env.PORT || 5000
+app.set 'port', process.env.PORT || 5000
 
 development = -> process.env.NODE_ENV != 'production'
 
@@ -48,8 +48,8 @@ if development()
 
 
 server = http.createServer(app)
-server.listen port, ->
-  console.log "http server listening on %d", port
+server.listen app.get('port'), ->
+  console.log "http server listening on %d", app.get('port')
 
 game = new GameServer(server)
 game.run()

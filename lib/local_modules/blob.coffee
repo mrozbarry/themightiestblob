@@ -33,7 +33,7 @@ class Blob
       @velocity.y = 0
 
     speed = (new MathExt.Vector()).distance(@velocity)
-    slow = speed / @mass
+    slow = speed * @mass
 
     @velocity = @velocity.divide(configuration.speedDecayPerTick * slow)
 

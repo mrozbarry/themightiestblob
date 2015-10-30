@@ -44,7 +44,8 @@
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --opts spec/mocha.opts spec",
     "compile": "webpack --config config/webpack.production.config.js",
-    "start": "coffee server/index.coffee"
+    "start": "NODE_ENV=production coffee server/index.coffee",
+    "local": "coffee server/index.coffee"
   },
   "engines": {
     "node": "4.1.1",
