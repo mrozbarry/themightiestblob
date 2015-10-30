@@ -45,5 +45,9 @@
     "test": "./node_modules/mocha/bin/mocha --opts spec/mocha.opts spec",
     "compile": "webpack --config config/webpack.production.config.js",
     "start": "coffee server/index.coffee"
+  },
+  "engines": {
+    "node": "4.1.1",
+    "npm": "2.14.4"
   }
 }
