@@ -29,7 +29,7 @@ module.exports = Component.create
     isSecure = window.location.protocol == "https:"
     console.debug 'Application.connectSocket', window.location.protocol, isSecure
     host = [
-      if isSecure == "https:" then "wss://" else "ws://"
+      if isSecure then "wss://" else "ws://"
       window.location.hostname
     ]
     host = host.concat [":", window.location.port] if window.location.port != ""
