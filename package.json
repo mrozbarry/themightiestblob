@@ -1,0 +1,49 @@
+{
+  "name": "the-mightiest-blob",
+  "version": "0.0.1",
+  "description": "A game inspired by agar.io",
+  "author": "Alex Barry",
+  "license": "MIT",
+  "main": "public/index.html",
+  "dependencies": {
+    "eventemitter3": "^1.1.1",
+    "flux": "^2.0.3",
+    "js-md5": "^0.3.0",
+    "lodash": "^3.1.0",
+    "lzutf8": "^0.3.2",
+    "react": "^0.14.0",
+    "react-dom": "0.14.0",
+    "sat": "^0.5.0",
+    "sillyname": "^0.1.0",
+    "uuid": "^2.0.1",
+    "verlet-constraint": "^1.0.3",
+    "verlet-point": "^1.2.1",
+    "verlet-system": "^1.0.15",
+    "ws": "^0.8.0",
+    "coffee-loader": "^0.7.2",
+    "coffee-script": "^1.8.0",
+    "css-loader": "^0.9.1",
+    "express": "^4.13.3",
+    "file-loader": "^0.8.4",
+    "html-webpack-plugin": "^2.0.4",
+    "json-loader": "^0.5.2",
+    "less": "^2.5.1",
+    "node-sass": "^3.1.2",
+    "sass-loader": "^1.0.2",
+    "style-loader": "^0.8.3",
+    "url-loader": "^0.5.6",
+    "webpack": "^1.5.1"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.0",
+    "expect.js": "^0.3.1",
+    "sinon": "^1.16.1",
+    "webpack-dev-middleware": "^1.2.0",
+    "webpack-hot-middleware": "^2.2.0"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --opts spec/mocha.opts spec",
+    "compile": "webpack --config config/webpack.production.config.js",
+    "start": "coffee server/index.coffee"
+  }
+}
