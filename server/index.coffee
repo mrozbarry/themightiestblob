@@ -1,13 +1,3 @@
-
-# ---
-
-Webpack = require("webpack")
-WebpackDevMiddleware = require("webpack-dev-middleware")
-WebpackHotMiddleware = require("webpack-hot-middleware")
-webpackConfig = require("../config/webpack.config.js")
-
-# ---
-
 http = require("http")
 express = require("express")
 path = require("path")
@@ -31,6 +21,11 @@ development = -> process.env.NODE_ENV != 'production'
 app.use express.static(publicPath)
 
 if development()
+  Webpack = require("webpack")
+  WebpackDevMiddleware = require("webpack-dev-middleware")
+  WebpackHotMiddleware = require("webpack-hot-middleware")
+  webpackConfig = require("../config/webpack.config.js")
+
   console.log 'Application is not in production mode, activating middleware...'
   compiler = Webpack(webpackConfig)
 
