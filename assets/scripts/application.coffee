@@ -33,7 +33,7 @@ module.exports = Component.create
       window.location.hostname
     ]
     host = host.concat [":", window.location.port] if window.location.port != ""
-    websocketHost = host.join
+    websocketHost = host.join ''
     console.debug ' ->', websocketHost
 
     @socket = new WebSocket(websocketHost)
