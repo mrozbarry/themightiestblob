@@ -2,7 +2,7 @@
 # ---
 
 Webpack = require("webpack")
-WebpackMiddleware = require("webpack-dev-middleware")
+WebpackDevMiddleware = require("webpack-dev-middleware")
 WebpackHotMiddleware = require("webpack-hot-middleware")
 webpackConfig = require("../config/webpack.config.js")
 
@@ -30,9 +30,11 @@ app = express()
 app.use express.static(publicPath)
 
 if development()
+  console.log 'Application is not in production mode, activating middleware...'
   compiler = Webpack(webpackConfig)
 
-  app.use WebpackMiddleware(compiler,
+  console.log ' -> Webpack Dev Middleware'
+  app.use WebpackDevMiddleware(compiler,
     publicPath: webpackConfig.output.publicPath
     contentBase: "assets/scripts"
     stats: {
@@ -42,9 +44,16 @@ if development()
       chunks: false
       chunkModules: false
       modules: false
+    },
+    lazy: false,
+    watchOptions: {
+      poll: true
     }
   )
+  console.log ' -> Webpack Hot Middleware'
   app.use WebpackHotMiddleware(compiler)
+else
+  console.log '***=== Application is in production mode ===***'
 
 
 server = http.createServer(app)
