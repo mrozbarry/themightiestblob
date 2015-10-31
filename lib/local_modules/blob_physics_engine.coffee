@@ -7,53 +7,46 @@ _ = require('lodash')
 module.exports = class BlobPhysicsEngine
   constructor: (@timeStep = 1 / 30.0, verletSystemOpts = {}) ->
     @world = VerletSystem(verletSystemOpts)
-    @owners = []
-    @resetQueuedSteps()
+    @owners = new Array()
+    @blobs = new Array()
 
-  resetQueuedSteps: ->
-    @accumulator = 0
-    @lastSimulationStep = Date.now()
+    @callbacks =
+      preSolve: new Array()
+      collided: new Array()
+      postSolve: new Array()
 
-  findOrCreateOwner: (ownerId) ->
-    return false unless ownerId?
-    existing = _.find @owners, id: ownerId
-    return existing if existing?
+  on: (callbackName, method) ->
+    @callbacks[callbackName].push method
 
-    owner = { id: ownerId, blobs: new Array() }
-    @owners.push owner
-    owner
+  off: (callbackName, method) ->
+    _.pull @callbacks[callbackName], method
+
+  emit: (callbackName, args) ->
+    _.some @callbacks[callbackName], (cb) =>
+      _.contains [undefined, true], cb.apply(@, args)
 
   addBlob: (ownerId, x, y, radius) ->
-    owner = @findOrCreateOwner(ownerId)
-    return false unless owner
+    return false unless ownerId?
 
     blob = Point({
       position: [x, y]
       radius: radius
       mass: Math.floor(Math.PI * Math.pow(radius, 2))
     })
-    owner.blobs.push blob
+    @blobs.push blob
+    blob.ownerId = ownerId
     blob
 
-  collectBlobs: ->
-    _.reduce @owners, ((blobs, owner) ->
-      blobs.concat(owner.blobs)
-    ), new Array()
-
-  update: ->
-    now = Date.now()
-    deltaTime = now - @lastSimulationStep
-    @integrate(deltaTime)
-    @lastSimulationStep = now
+  collectBlobs: (ownerId) ->
+    return false unless ownerId?
+    _.select @blobs, ownerId: ownerId
 
   integrate: (deltaTime) ->
-    blobs = @collectBlobs()
-
-    if blobs.length > 0
-      @world.integrate(blobs, deltaTime)
+    if @blobs.length > 0
+      @world.integrate(@blobs, deltaTime)
 
   checkCollision: (a, b) ->
-    xOverlapA = a.position[0] + a.radius + b.radius > b.x
+    xOverlapA = a.position[0] + a.radius + b.radius > b.position[0]
     xOverlapB = a.position[0] < b.position[0] + a.radius + b.radius
     xOverlap = xOverlapA && xOverlapB
     yOverlapA = a.position[1] + a.radius + b.radius > b.position[1]
@@ -64,15 +57,21 @@ module.exports = class BlobPhysicsEngine
 
     if xOverlap && yOverlap && @distanceBetweenBlobs(a, b) < minTouchDist
       pointOfCollision = @calculateCollisionPoint(a, b)
-      # Do pre-collision cb
+
+      @emit 'preSolve', [a, b, pointOfCollision]
       a = @updateAccelerationOfBlobAgainstCollider(a, b)
       b = @updateAccelerationOfBlobAgainstCollider(b, a)
-      # Do collided cb
+
+      @emit 'collided', [a, b, pointOfCollision]
       a.position[0] += a.acceleration[0]
       a.position[1] += a.acceleration[1]
       b.position[0] += b.acceleration[0]
       b.position[1] += b.acceleration[1]
-      # Do post collided cb
+
+      @emit 'postSolve', [a, b, pointOfCollision]
+      return true
+
+    false
 
   distanceBetweenBlobs: (a, b) ->
     xSqrDiff = (a.position[0] - b.position[0]) * (a.position[0] - b.position[0])
@@ -93,6 +92,7 @@ module.exports = class BlobPhysicsEngine
   updateAccelerationOfBlobAgainstCollider: (blob, collider) ->
     vx = (blob.acceleration[0] * (blob.mass - collider.mass) + (2 * collider.mass * collider.acceleration[0])) / (blob.mass + collider.mass)
     vy = (blob.acceleration[1] * (blob.mass - collider.mass) + (2 * collider.mass * collider.acceleration[1])) / (blob.mass + collider.mass)
+
     blob.acceleration[0] = vx
     blob.acceleration[1] = vy
     blob
