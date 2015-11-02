@@ -1,42 +1,33 @@
-Player = require('../lib/local_modules/player')
-MathExt = require('../lib/local_modules/math_ext')
-lz4 = require('lzutf8')
-md5 = require('js-md5')
 uuid = require('uuid')
 
 module.exports = (server, socket) ->
   socket.tmb =
     uuid: uuid.v4()
-    connected: true
-    playerUuid: null
+    name: null
+    target: [0, 0]
 
   socket.on "message", (data, flags) ->
     message = server.decodeMessage(data)
 
     switch message.channel
-      when "client:broadcast:chat"
-        server.broadcastMessage "server:broadcast:chat",
-          playerUuid: @player.uuid
-          text: payload.text
-
       when "client:join"
-        player = server.newPlayer(socket, message.data.name, message.data.mass)
-        socket.tmb.playerUuid = player.uuid
+        socket.tmb.name = message.data.name
+        position = [
+          Math.random() * server.engine.world.max[0]
+          Math.random() * server.engine.world.max[1]
+        ]
+        server.engine.addBlob socket.tmb.uuid, position, message.data.mass || 10
 
       when "client:leave"
-        socket.tmb.connected = false
-        server.removePlayer(socket.tmb.playerUuid)
+        server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
         socket.close()
 
       when "client:target"
-        server.setPlayerTarget(socket.tmb.playerUuid, message.data)
-
-      when "client:split"
-        server.setPlayerSplit(socket.tmb.playerUuid)
+        server.setPlayerTarget(socket.tmb.euid, message.data)
 
   socket.on "close", ->
     socket.tmb.connected = false
-    server.removePlayer(socket.tmb.playerUuid)
+    # TODO: remove player from simulation
 
   server.sendMessage(socket, 'server:hello', 'tmb')
 
