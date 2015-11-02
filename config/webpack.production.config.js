@@ -30,7 +30,6 @@ module.exports = {
   },
 
   plugins: [
-    new Webpack.optimize.OccurenceOrderPlugin(),
     new HtmlWebpackPlugin(),
     new Webpack.ProvidePlugin({
       "_": "lodash",
