@@ -5,45 +5,52 @@ Constraint = require('verlet-constraint')
 _ = require('lodash')
 
 module.exports = class BlobPhysicsEngine
-  constructor: (@timeStep = 1 / 30.0, verletSystemOpts = {}) ->
+  constructor: (verletSystemOpts = {}) ->
     @world = VerletSystem(verletSystemOpts)
-    @owners = new Array()
     @blobs = new Array()
+
+    @accumulator = 0
+    @timestep = (1 / 60)
 
     @callbacks =
       preSolve: new Array()
       collided: new Array()
       postSolve: new Array()
 
-  on: (callbackName, method) ->
-    @callbacks[callbackName].push method
-
-  off: (callbackName, method) ->
-    _.pull @callbacks[callbackName], method
-
-  emit: (callbackName, args) ->
-    _.some @callbacks[callbackName], (cb) =>
-      _.contains [undefined, true], cb.apply(@, args)
-
-  addBlob: (ownerId, x, y, radius) ->
-    return false unless ownerId?
-
+  addBlob: (ownerId, position, radius) ->
     blob = Point({
-      position: [x, y]
+      position: position
       radius: radius
-      mass: Math.floor(Math.PI * Math.pow(radius, 2))
+      mass: radius # Math.floor(Math.PI * Math.pow(radius, 2) / 2)
     })
     @blobs.push blob
     blob.ownerId = ownerId
     blob
 
-  collectBlobs: (ownerId) ->
-    return false unless ownerId?
-    _.select @blobs, ownerId: ownerId
+  collectBlobsWith: (attributes) ->
+    return [] unless attributes? && _.isPlainObject(attributes)
+    _.select @blobs, attributes
+
+  removeBlobsWith: (attributes) ->
+    return 0 unless attributes? && _.isPlainObject(attributes)
+    oldLength = @blobs.length
+    @blobs = _.reject @blobs, attributes
+    oldLength - @blobs.length
 
   integrate: (deltaTime) ->
-    if @blobs.length > 0
-      @world.integrate(@blobs, deltaTime)
+    unless @blobs.length
+      return
+
+    # console.groupCollapsed 'Entering integration steps', @accumulator, @timestep, deltaTime, (@accumulator + deltaTime)
+    @accumulator += deltaTime # || 0)
+    steps = 0
+    while @accumulator > @timestep
+      steps++
+      # console.log '+timestep'
+      @world.integrate(@blobs, @timestep)
+      @accumulator -= @timestep
+    # console.debug steps, '+timesteps'
+    # console.groupEnd()
 
   checkCollision: (a, b) ->
     xOverlapA = a.position[0] + a.radius + b.radius > b.position[0]
@@ -58,15 +65,11 @@ module.exports = class BlobPhysicsEngine
     if xOverlap && yOverlap && @distanceBetweenBlobs(a, b) < minTouchDist
       pointOfCollision = @calculateCollisionPoint(a, b)
 
-      @emit 'preSolve', [a, b, pointOfCollision]
-      a = @updateAccelerationOfBlobAgainstCollider(a, b)
-      b = @updateAccelerationOfBlobAgainstCollider(b, a)
+      return false unless @emit 'preSolve', [a, b, pointOfCollision]
+      constraint = Constraint [a, b], { stiffness: 0.8, restingDistance: (a.radius + b.radius)}
 
-      @emit 'collided', [a, b, pointOfCollision]
-      a.position[0] += a.acceleration[0]
-      a.position[1] += a.acceleration[1]
-      b.position[0] += b.acceleration[0]
-      b.position[1] += b.acceleration[1]
+      if @emit('collided', [a, b, pointOfCollision])
+        constraint.solve()
 
       @emit 'postSolve', [a, b, pointOfCollision]
       return true
@@ -89,11 +92,32 @@ module.exports = class BlobPhysicsEngine
       position: [x, y]
     })
 
-  updateAccelerationOfBlobAgainstCollider: (blob, collider) ->
-    vx = (blob.acceleration[0] * (blob.mass - collider.mass) + (2 * collider.mass * collider.acceleration[0])) / (blob.mass + collider.mass)
-    vy = (blob.acceleration[1] * (blob.mass - collider.mass) + (2 * collider.mass * collider.acceleration[1])) / (blob.mass + collider.mass)
+  # TODO: Do blobs bounce?  Probably not, but I need to do some testing to see if it makes sense
+  # updateAccelerationOfBlobAgainstCollider: (blob, collider) ->
+  #   vx = (blob.acceleration[0] * (blob.mass - collider.mass) + (2 * collider.mass * collider.acceleration[0])) / (blob.mass + collider.mass)
+  #   vy = (blob.acceleration[1] * (blob.mass - collider.mass) + (2 * collider.mass * collider.acceleration[1])) / (blob.mass + collider.mass)
+  #
+  #   Point({
+  #     position: [vx, vy]
+  #   })
+  #
 
-    blob.acceleration[0] = vx
-    blob.acceleration[1] = vy
-    blob
+  on: (callbackName, method) ->
+    return unless @_callbackNameValid(callbackName)
+    @callbacks[callbackName].push method
+
+  off: (callbackName, method) ->
+    return unless @_callbackNameValid(callbackName)
+    _.pull @callbacks[callbackName], method
+
+  emit: (callbackName, args) ->
+    return unless @_callbackNameValid(callbackName)
+
+    _.reduce @callbacks[callbackName], ((result, callback) ->
+      return false unless result == true
+      _.contains [undefined, true], cb.apply(@, args)
+    ), true
+
+  _callbackNameValid: (callbackName) ->
+    _.contains ['preSolve', 'collided', 'postSolve'], callbackName
 
