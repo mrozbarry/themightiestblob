@@ -1,4 +1,3 @@
-
 expect = require('expect.js')
 BlobPhysicsEngine = require('../../../../lib/local_modules/blob_physics_engine')
 
