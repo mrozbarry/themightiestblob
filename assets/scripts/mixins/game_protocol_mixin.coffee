@@ -13,11 +13,8 @@ module.exports =
   leaveGame: ->
     @sendMessage "client:leave", {}
 
-  setTarget: (position) ->
+  sendTarget: (position) ->
     return unless @state.uuid
     @sendMessage "client:target", position
 
-  setSplit: ->
-    return unless @state.uuid
-    # @sendMessage "client:split", {}
 

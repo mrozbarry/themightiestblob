@@ -1,3 +1,5 @@
+WebSocket = require('ws')
+lz4       = require('lzutf8')
 
 module.exports =
   socket: null
@@ -31,6 +33,10 @@ module.exports =
         inputEncoding: 'Base64'
         outputEncoding: 'String'
       @processMessage(JSON.parse(raw))
+
+  disconnectSocket: ->
+    @socket.close()
+    @socket = null
 
   createMessage: (channel, data) ->
     JSON.stringify({
