@@ -1,10 +1,13 @@
 uuid = require('uuid')
+_ = require('lodash')
+please = require('pleasejs')
 
 module.exports = (server, socket) ->
   socket.tmb =
     uuid: uuid.v4()
     name: null
     target: [0, 0]
+    colour: please.make_color()
 
   socket.on "message", (data, flags) ->
     message = server.decodeMessage(data)
@@ -16,18 +19,21 @@ module.exports = (server, socket) ->
           Math.random() * server.engine.world.max[0]
           Math.random() * server.engine.world.max[1]
         ]
-        server.engine.addBlob socket.tmb.uuid, position, message.data.mass || 10
+        server.engine.addBlob socket.tmb.uuid, position, parseInt(message.data.mass) || 10
+        server.sendMessage(socket, "client:info", socket.tmb)
+
+        clients = _.map server.wss.clients, (client) -> client.tmb
+        server.broadcastMessage "client:list", clients
 
       when "client:leave"
         server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
         socket.close()
 
       when "client:target"
-        server.setPlayerTarget(socket.tmb.euid, message.data)
+        server.setPlayerTarget(socket.tmb.uuid, message.data)
 
   socket.on "close", ->
-    socket.tmb.connected = false
     # TODO: remove player from simulation
 
-  server.sendMessage(socket, 'server:hello', 'tmb')
+  server.sendMessage(socket, 'server:info', server.engine.world)
 

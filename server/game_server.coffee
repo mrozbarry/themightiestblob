@@ -26,8 +26,9 @@ module.exports = class
       tickHandle: null
       lastTick: Date.now()
       accumulator: 0
-      timestep: (1 / 10) * 1000
-
+      timestep: (1 / 10)
+      broadcastTime: 2000
+      nextBroadcast: Date.now()
 
   run: ->
     @wss.on "connection", (ws) =>
@@ -46,12 +47,22 @@ module.exports = class
       @engine.integrate(@simulator.timestep)
       @simulator.accumulator -= @simulator.timestep
 
-    @broadcastMessage "game:step", @engine.blobs
+    if now > @simulator.nextBroadcast
+      @broadcastMessage "game:step", _.map @engine.blobs, @blobToPlainObject
+      @simulator.nextBroadcast = now + @simulator.broadcastTime
 
-    @simulator.tickHandle = setTimeout (=> @gameTick()), @simulator.timestep
+    @simulator.tickHandle = setTimeout (=> @gameTick()), 1
     @simulator.lastTick = now
 
-  setPlayerTarget: (uuid, position) ->
+  blobToPlainObject: (blob) ->
+    position: _.map [0, 1], (axis) -> blob.position[axis]
+    previous: _.map [0, 1], (axis) -> blob.previous[axis]
+    acceleration: _.map [0, 1], (axis) -> blob.acceleration[axis]
+    mass: blob.mass
+    radius: blob.radius
+    ownerId: blob.ownerId
+
+  setPlayerTarget: (uuid, point) ->
     blobs = @engine.collectBlobsWith ownerId: uuid
     _.each blobs, (blob) ->
       distance = Math.sqrt(
@@ -90,10 +101,11 @@ module.exports = class
 
     disconnectIdx = new Array()
     _.each @wss.clients, (client, idx) =>
-      if client.tmb.connected
+      try
         @_sendMessageTo(client, compressed)
-      else
-        console.log 'Client should be disconnected', idx, client.tmb
+      catch e
+        console.log 'Problem sending to', client
+
 
 
   sendMessage: (client, channel, data) ->
