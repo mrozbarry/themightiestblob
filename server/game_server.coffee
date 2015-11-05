@@ -1,61 +1,102 @@
-TheMightiestBlob = require('../lib/local_modules/the_mightiest_blob')
-Player = require('../lib/local_modules/player')
-MathExt = require('../lib/local_modules/math_ext')
-
-
 WebSocketServer = require("ws").Server
-clientize = require('./client')
 _ = require('lodash')
 lz4 = require('lzutf8')
-md5 = require('js-md5')
 
-random = (min, max) ->
-  diff = max - min
-  (Math.random() * diff) + min
-
-randomPosition = (game) ->
-  new MathExt.Vector(
-    random(0, game.configuration.worldSize)
-    random(0, game.configuration.worldSize)
-  )
+BlobPhysicsEngine = require('../lib/local_modules/blob_physics_engine')
+clientize = require('./client')
 
 
 module.exports = class
   constructor: (server) ->
-    @game = new TheMightiestBlob(
-      maxPlayers: 5
-      worldSize: 3000
-    )
     @wss = new WebSocketServer {
       server: server
       clientTracking: true
     }
-    @lastGameState = null
+
+    @engine = new BlobPhysicsEngine(
+      gravity: [0, 0]
+      min: [0, 0]
+      max: [1920, 1080]
+      friction: 0.5
+      bounce: 1.0
+    )
+    @players = new Array()
+
+    @simulator =
+      tickHandle: null
+      lastTick: Date.now()
+      accumulator: 0
+      timestep: (1 / 10)
+      broadcastTime: 2000
+      nextBroadcast: Date.now()
 
   run: ->
     @wss.on "connection", (ws) =>
       clientize(@, ws)
 
-    @game.on "game:state:change", (e) =>
-      if @game.players.length > 0
-        state = _.pick(@game, ['configuration', 'players'])
-        @broadcastMessage("game:state:change", state)
+    @simulator.lastTick = Date.now()
+    @gameTick()
+
+
+  gameTick: ->
+    now = Date.now()
+    delta = (now - @simulator.lastTick) / 1000
+    @simulator.accumulator += delta
+
+    while @simulator.accumulator > @simulator.timestep
+      @engine.integrate(@simulator.timestep)
+      @simulator.accumulator -= @simulator.timestep
+
+    if now > @simulator.nextBroadcast
+      @broadcastMessage "game:step", @getAllBlobs()
+      @simulator.nextBroadcast = now + @simulator.broadcastTime
+
+    @simulator.tickHandle = setTimeout (=> @gameTick()), 1
+    @simulator.lastTick = now
+
+  blobToPlainObject: (blob) ->
+    position: _.map [0, 1], (axis) -> blob.position[axis]
+    previous: _.map [0, 1], (axis) -> blob.previous[axis]
+    acceleration: _.map [0, 1], (axis) -> blob.acceleration[axis]
+    mass: blob.mass
+    radius: blob.radius
+    ownerId: blob.ownerId
+
+  getAllBlobs: ->
+    _.map @engine.blobs, @blobToPlainObject
+
+  setPlayerTarget: (uuid, point) ->
+    blobs = @engine.collectBlobsWith ownerId: uuid
+    _.each blobs, (blob) ->
+      distance = Math.sqrt(
+        ((blob.position[0] - point[0]) * (blob.position[0] - point[0])) +
+        ((blob.position[1] - point[1]) * (blob.position[1] - point[1]))
+      )
+      if distance > 10
+        diff = _.map point, (axis, idx) ->
+          (axis - blob.position[idx]) / distance
+        blob.addForce diff
+
 
   compressMessage: (message) ->
     lz4.compress message,
       outputEncoding: 'Base64'
+
 
   decompressMessage: (message) ->
     lz4.decompress message,
       inputEncoding: 'Base64'
       outputEncoding: 'String'
 
+
   decodeMessage: (message) ->
     JSON.parse @decompressMessage(message)
+
 
   composeMessage: (channel, data) ->
     channel: channel
     data: data
+
 
   broadcastMessage: (channel, data) ->
     composed = @composeMessage(channel, data)
@@ -63,59 +104,22 @@ module.exports = class
 
     disconnectIdx = new Array()
     _.each @wss.clients, (client, idx) =>
-      if client.tmb.connected
+      try
         @_sendMessageTo(client, compressed)
-      else
-        console.log 'Client should be disconnected', idx, client.tmb
+      catch e
+        console.log 'Problem sending to', client
+
+
 
   sendMessage: (client, channel, data) ->
     composed = JSON.stringify @composeMessage(channel, data)
     compressed = @compressMessage composed
     @_sendMessageTo(client, compressed)
 
+
   _sendMessageTo: (client, message) ->
     try
       client.send(message)
     catch e
       console.log '_sendMessageTo', client.tmb
-
-
-  newPlayer: (socket, name, mass) ->
-    player = new Player(name)
-
-    player.addBlob(
-      randomPosition(@game),
-      mass || @game.configuration.startBlobMass
-    )
-
-    player.target = player.blobs[0].position
-
-    @game.addPlayer player
-
-    @sendMessage socket, 'join:success',
-      uuid: player.uuid
-
-    player
-
-  removePlayer: (playerUuid) ->
-    @game.removePlayer uuid: playerUuid
-
-  setPlayerTarget: (playerUuid, target) ->
-    return unless playerUuid
-    player = _.find @game.players, uuid: playerUuid
-    return unless player
-
-    player.target = new MathExt.Vector(
-      target.x,
-      target.y
-    )
-
-  setPlayerSplit: (playerUuid, target) ->
-    return unless playerUuid
-    player = _.find @game.players, uuid: playerUuid
-    return unless player
-
-    player.splitAllBlobs()
-
-
 
