@@ -24,6 +24,7 @@ module.exports = (server, socket) ->
 
         clients = _.map server.wss.clients, (client) -> client.tmb
         server.broadcastMessage "client:list", clients
+        server.sendMessage socket, "game:step", server.getAllBlobs()
 
       when "client:leave"
         server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
@@ -33,7 +34,7 @@ module.exports = (server, socket) ->
         server.setPlayerTarget(socket.tmb.uuid, message.data)
 
   socket.on "close", ->
-    # TODO: remove player from simulation
+    server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
 
   server.sendMessage(socket, 'server:info', server.engine.world)
 
