@@ -21,10 +21,10 @@ module.exports = class BlobPhysicsEngine
     blob = Point({
       position: position
       radius: radius
-      mass: radius # Math.floor(Math.PI * Math.pow(radius, 2) / 2)
+      mass: radius
     })
-    @blobs.push blob
     blob.ownerId = ownerId
+    @blobs.push blob
     blob
 
   collectBlobsWith: (attributes) ->
@@ -41,16 +41,10 @@ module.exports = class BlobPhysicsEngine
     unless @blobs.length
       return
 
-    # console.groupCollapsed 'Entering integration steps', @accumulator, @timestep, deltaTime, (@accumulator + deltaTime)
-    @accumulator += deltaTime # || 0)
-    steps = 0
+    @accumulator += deltaTime
     while @accumulator > @timestep
-      steps++
-      # console.log '+timestep'
       @world.integrate(@blobs, @timestep)
       @accumulator -= @timestep
-    # console.debug steps, '+timesteps'
-    # console.groupEnd()
 
   checkCollision: (a, b) ->
     xOverlapA = a.position[0] + a.radius + b.radius > b.position[0]
@@ -85,6 +79,7 @@ module.exports = class BlobPhysicsEngine
   calculateCollisionPoint: (a, b) ->
     x = (a.position[0] * b.radius) + (b.position[0] * a.radius) /
       (a.radius + b.radius)
+
     y = (a.position[1] * b.radius) + (b.position[1] * a.radius) /
       (a.radius + b.radius)
 
