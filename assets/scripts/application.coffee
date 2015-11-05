@@ -103,17 +103,7 @@ module.exports = Component.create
     @leaveGame()
     @engine = null
 
-  # TODO: Disable this after testing ---------------------------------------------
-  # componentDidMount: ->
-  #   @buildEngine()
-  #   @engine.addBlob initialUuid, [0, 0], 50
-  #   @stepSimulation(@engine.blobs)
-
   componentDidUpdate: ->
-    # Not sure if this timeout is neccessary
-    # I just wanted to give JS enough time
-    # to breath.  Might be important on slower
-    # computers?
     setTimeout (=> @stepSimulation(@engine.blobs)), 1
 
   render: ->
