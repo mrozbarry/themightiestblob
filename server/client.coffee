@@ -1,42 +1,40 @@
-Player = require('../lib/local_modules/player')
-MathExt = require('../lib/local_modules/math_ext')
-lz4 = require('lzutf8')
-md5 = require('js-md5')
 uuid = require('uuid')
+_ = require('lodash')
+please = require('pleasejs')
 
 module.exports = (server, socket) ->
   socket.tmb =
     uuid: uuid.v4()
-    connected: true
-    playerUuid: null
+    name: null
+    target: [0, 0]
+    colour: please.make_color()
 
   socket.on "message", (data, flags) ->
     message = server.decodeMessage(data)
 
     switch message.channel
-      when "client:broadcast:chat"
-        server.broadcastMessage "server:broadcast:chat",
-          playerUuid: @player.uuid
-          text: payload.text
-
       when "client:join"
-        player = server.newPlayer(socket, message.data.name, message.data.mass)
-        socket.tmb.playerUuid = player.uuid
+        socket.tmb.name = message.data.name
+        position = [
+          Math.random() * server.engine.world.max[0]
+          Math.random() * server.engine.world.max[1]
+        ]
+        server.engine.addBlob socket.tmb.uuid, position, parseInt(message.data.mass) || 10
+        server.sendMessage(socket, "client:info", socket.tmb)
+
+        clients = _.map server.wss.clients, (client) -> client.tmb
+        server.broadcastMessage "client:list", clients
+        server.sendMessage socket, "game:step", server.getAllBlobs()
 
       when "client:leave"
-        socket.tmb.connected = false
-        server.removePlayer(socket.tmb.playerUuid)
+        server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
         socket.close()
 
       when "client:target"
-        server.setPlayerTarget(socket.tmb.playerUuid, message.data)
-
-      when "client:split"
-        server.setPlayerSplit(socket.tmb.playerUuid)
+        server.setPlayerTarget(socket.tmb.uuid, message.data)
 
   socket.on "close", ->
-    socket.tmb.connected = false
-    server.removePlayer(socket.tmb.playerUuid)
+    server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
 
-  server.sendMessage(socket, 'server:hello', 'tmb')
+  server.sendMessage(socket, 'server:info', server.engine.world)
 

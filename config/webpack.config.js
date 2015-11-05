@@ -2,8 +2,7 @@ var Webpack = require('webpack'),
     HtmlWebpackPlugin = require('html-webpack-plugin'),
     path = require('path'),
     mainPath = path.resolve(__dirname, '..', 'assets', 'scripts', 'index.coffee'),
-    webpackPaths = require('./webpack.paths.js'),
-    devServerPort = process.env.PORT || 8080;
+    webpackPaths = require('./webpack.paths.js');
 
 module.exports = {
   context: __dirname,
@@ -39,7 +38,10 @@ module.exports = {
   plugins: [
     new Webpack.optimize.OccurenceOrderPlugin(),
     new Webpack.HotModuleReplacementPlugin(),
+    new Webpack.NoErrorsPlugin(),
+
     new HtmlWebpackPlugin(),
+
     new Webpack.ProvidePlugin({
       "_": "lodash",
       "ReactDOM": "react-dom",
@@ -48,8 +50,6 @@ module.exports = {
 
       "Dispatcher": path.resolve(__dirname, '..', 'lib', 'local_modules', 'dispatcher.coffee'),
       "Component": path.resolve(__dirname, '..', 'lib', 'local_modules', 'react-component.coffee')
-    }),
-
-    new Webpack.HotModuleReplacementPlugin()
+    })
   ]
 };

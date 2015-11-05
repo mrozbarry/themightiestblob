@@ -11,22 +11,22 @@ module.exports = Component.create
 
     g {},
       _.map [0..xSteps], (step) =>
-        x = @props.translateAxis(xMin + (step * spacing), 'x')
+        x = xMin + (step * spacing)
         line
           key: "x-#{step}"
           x1: x
-          y1: @props.translateAxis(yMin, 'y')
+          y1: yMin
           x2: x
-          y2: @props.translateAxis(yMax, 'y')
+          y2: yMax
           stroke: colour
 
       _.map [0..ySteps], (step) =>
-        y = @props.translateAxis(yMin + (step * spacing), 'y')
+        y = yMin + (step * spacing)
         line
           key: "y-#{step}"
-          x1: @props.translateAxis(xMin, 'x')
+          x1: xMin
           y1: y
-          x2: @props.translateAxis(xMax, 'x')
+          x2: xMax
           y2: y
           stroke: colour
 

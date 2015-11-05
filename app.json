@@ -3,8 +3,5 @@
   "description": "Game using React, SVG, websockets, and webpack",
   "repository": "https://github.com/mrozbarry/themightiestblob",
   "website": "http://mrbarry.com",
-  "scripts": {
-    "postdeploy": "npm run compile"
-  },
   "success_url": "/"
 }
