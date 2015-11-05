@@ -8,10 +8,9 @@ WsMixin = require('./mixins/ws_mixin')
 GameProtocolMixin = require('./mixins/game_protocol_mixin')
 
 BlobPhysicsEngine = require('../../lib/local_modules/blob_physics_engine')
-
+Point = require('verlet-point')
 
 initialUuid = null
-# initialUuid = uuid.v4()
 
 module.exports = Component.create
   displayName: 'Application'
@@ -26,10 +25,11 @@ module.exports = Component.create
       when "server:info"
         @setState worldAttrs: message.data, =>
           @lastUpdate = Date.now()
-          @buildEngine(message.data.verlet)
+          @buildEngine(message.data)
           @stepSimulation(@engine.blobs)
 
       when "client:info"
+        console.info 'info', message.data
         @setState uuid: message.data.uuid
 
       when "client:kick"
@@ -37,11 +37,16 @@ module.exports = Component.create
           @disconnectSocket()
 
       when "client:list"
+        console.info 'list', message.data
         @setState players: message.data
 
       when "game:step"
+        return unless @engine?
         if message.data instanceof Array
-          @engine.blobs = message.data
+          @engine.blobs = _.map message.data, (blob) ->
+            pnt = Point(blob)
+            pnt.ownerId = blob.ownerId
+            pnt
 
   stepSimulation: (blobs) ->
     return unless @engine?
@@ -81,7 +86,9 @@ module.exports = Component.create
     lastUpdate: null
 
     worldAttrs:
-      worldSize: [1920, 1080]
+      min: [0, 0]
+      max: [1920, 1080]
+      gravity: [0, 0]
 
     players: _.map [initialUuid], (id, rank) ->
       uuid: id
@@ -107,7 +114,7 @@ module.exports = Component.create
     # I just wanted to give JS enough time
     # to breath.  Might be important on slower
     # computers?
-    setTimeout (=> @stepSimulation(@engine.blobs)), 0
+    setTimeout (=> @stepSimulation(@engine.blobs)), 1
 
   render: ->
     React.DOM.div {},

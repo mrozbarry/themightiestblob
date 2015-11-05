@@ -48,7 +48,7 @@ module.exports = class
       @simulator.accumulator -= @simulator.timestep
 
     if now > @simulator.nextBroadcast
-      @broadcastMessage "game:step", _.map @engine.blobs, @blobToPlainObject
+      @broadcastMessage "game:step", @getAllBlobs()
       @simulator.nextBroadcast = now + @simulator.broadcastTime
 
     @simulator.tickHandle = setTimeout (=> @gameTick()), 1
@@ -61,6 +61,9 @@ module.exports = class
     mass: blob.mass
     radius: blob.radius
     ownerId: blob.ownerId
+
+  getAllBlobs: ->
+    _.map @engine.blobs, @blobToPlainObject
 
   setPlayerTarget: (uuid, point) ->
     blobs = @engine.collectBlobsWith ownerId: uuid

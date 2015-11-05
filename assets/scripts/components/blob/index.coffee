@@ -16,7 +16,7 @@ module.exports = Component.create
         cy: blob.position[1]
         strokeWidth: '5px'
         style:
-          fill: '#ff00ff'
+          fill: player.colour
           stroke: '#0a0a0a'
       text
         x: blob.position[0]

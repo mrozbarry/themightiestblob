@@ -84,10 +84,10 @@ module.exports = Component.create
           transform: "translate(#{@camera[0]}, #{@camera[1]})",
 
           Grid
-            xMin: 0
-            yMin: 0
-            xMax: worldAttrs.worldSize[0]
-            yMax: worldAttrs.worldSize[1]
+            xMin: worldAttrs.min[0]
+            yMin: worldAttrs.min[0]
+            xMax: worldAttrs.max[0]
+            yMax: worldAttrs.max[1]
             spacing: 100
             colour: '#00aaaa'
 
