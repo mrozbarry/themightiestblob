@@ -47,9 +47,9 @@ module.exports = class
       @engine.integrate(@simulator.timestep)
       @simulator.accumulator -= @simulator.timestep
 
-    if now > @simulator.nextBroadcast
+    # if now > @simulator.nextBroadcast
       @broadcastMessage "game:step", @getAllBlobs()
-      @simulator.nextBroadcast = now + @simulator.broadcastTime
+      # @simulator.nextBroadcast = now + @simulator.broadcastTime
 
     @simulator.tickHandle = setTimeout (=> @gameTick()), 1
     @simulator.lastTick = now
