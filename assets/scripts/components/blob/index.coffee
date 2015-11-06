@@ -8,6 +8,8 @@ module.exports = Component.create
   render: ->
     { blob, player } = @props
 
+    colour = if player? then player.colour else '#afafaf'
+
     g className: 'blob',
       circle
         className: 'blob__circle'
@@ -16,16 +18,17 @@ module.exports = Component.create
         cy: blob.position[1]
         strokeWidth: '5px'
         style:
-          fill: player.colour
+          fill: colour
           stroke: '#0a0a0a'
-      text
-        x: blob.position[0]
-        y: blob.position[1]
-        textAnchor: 'middle'
-        style: {
-          fontSize: '16px'
-        },
-        player.name
+      if player?
+        text
+          x: blob.position[0]
+          y: blob.position[1]
+          textAnchor: 'middle'
+          style: {
+            fontSize: '16px'
+          },
+          player.name
       text
         x: blob.position[0]
         y: blob.position[1] + 20

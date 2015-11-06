@@ -44,6 +44,11 @@ module.exports = class BlobPhysicsEngine
     @accumulator += deltaTime
     while @accumulator > @timestep
       @world.integrate(@blobs, @timestep)
+      _.each @blobs, (a) =>
+        _.each @blobs, (b) =>
+          return true if a == b
+          @checkCollision(a, b)
+          true
       @accumulator -= @timestep
 
   checkCollision: (a, b) ->
