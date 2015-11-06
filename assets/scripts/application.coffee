@@ -80,8 +80,8 @@ module.exports = Component.create
   getInitialState: ->
     uuid: initialUuid
     previous:
-      name: sillyname()
-      mass: 1
+      name: ''
+      mass: 10
 
     lastUpdate: null
 
