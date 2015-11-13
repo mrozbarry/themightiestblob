@@ -7,7 +7,6 @@ _ = require('lodash')
 module.exports = class BlobPhysicsEngine
   constructor: (verletSystemOpts = {}) ->
     @world = VerletSystem(verletSystemOpts)
-    @blobs = new Array()
 
     @accumulator = 0
     @timestep = (1 / 60)
@@ -17,35 +16,41 @@ module.exports = class BlobPhysicsEngine
       collided: new Array()
       postSolve: new Array()
 
-  addBlob: (ownerId, position, radius) ->
+  addBlob: (blobs, ownerId, position, radius) ->
     blob = Point({
       position: position
       radius: radius
       mass: radius
     })
     blob.ownerId = ownerId
-    @blobs.push blob
+    blobs.push blob
     blob
 
-  collectBlobsWith: (attributes) ->
+  forceBlobTowards: (blob, target) ->
+    distance = @distanceBetweenPoints(blob.position, target)
+    return [0, 0] if distance <= (blob.radius * .75)
+
+    _.map target, (axis, idx) ->
+      (axis - blob.position[idx]) / (blob.mass)
+
+
+  collectBlobsWith: (blobs, attributes) ->
     return [] unless attributes? && _.isPlainObject(attributes)
-    _.select @blobs, attributes
+    _.select blobs, attributes
 
-  removeBlobsWith: (attributes) ->
-    return 0 unless attributes? && _.isPlainObject(attributes)
-    oldLength = @blobs.length
-    @blobs = _.reject @blobs, attributes
-    oldLength - @blobs.length
+  removeBlobsWith: (blobs, attributes) ->
+    return blobs unless attributes? && _.isPlainObject(attributes)
+    blobs = _.reject blobs, attributes
 
-  integrate: (deltaTime) ->
-    unless @blobs.length
+  integrate: (blobs, deltaTime) ->
+    unless blobs.length
       return
 
     @accumulator += deltaTime
     while @accumulator > @timestep
-      @world.integrate(@blobs, @timestep)
-      _.each @blobs, (a) =>
-        _.each @blobs, (b) =>
+      @world.integrate(blobs, @timestep)
+      _.each blobs, (a) =>
+        _.each blobs, (b) =>
           return true if a == b
           @checkCollision(a, b)
           true
@@ -75,11 +80,13 @@ module.exports = class BlobPhysicsEngine
 
     false
 
-  distanceBetweenBlobs: (a, b) ->
-    xSqrDiff = (a.position[0] - b.position[0]) * (a.position[0] - b.position[0])
-    ySqrDiff = (a.position[1] - b.position[1]) * (a.position[1] - b.position[1])
+  distanceBetweenPoints: (a, b) ->
+    xSqrDiff = (a[0] - b[0]) * (a[0] - b[0])
+    ySqrDiff = (a[1] - b[1]) * (a[1] - b[1])
     Math.sqrt(xSqrDiff + ySqrDiff)
 
+  distanceBetweenBlobs: (a, b) ->
+    @distanceBetweenPoints(a.position, b.position)
 
   calculateCollisionPoint: (a, b) ->
     x = (a.position[0] * b.radius) + (b.position[0] * a.radius) /
