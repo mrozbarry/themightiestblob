@@ -5,7 +5,6 @@ var Webpack = require('webpack'),
     webpackPaths = require('./webpack.paths.js');
 
 module.exports = {
-  context: __dirname,
   devtool: 'eval-source-map',
 
   entry: [

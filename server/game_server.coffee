@@ -12,12 +12,16 @@ module.exports = class
     @engine = new BlobPhysicsEngine(
       gravity: [0, 0]
       min: [0, 0]
-      max: [1920, 1080]
+      max: [100000, 10000]
       friction: 0.5
       bounce: 1.0
     )
     @players = new Array()
     @blobs = new Array()
+
+    _.each [0..200], (worldBlob) =>
+      @spawnBlob()
+
 
     @simulator =
       tickHandle: null
@@ -45,9 +49,15 @@ module.exports = class
     delta = (now - @simulator.lastTick) / 1000
     @simulator.accumulator += delta
 
+    collisions = 0
     while @simulator.accumulator > @simulator.timestep
       @engine.integrate(@blobs, @simulator.timestep)
+      collisions += @engine.lastIntegrate.numberOfCollisions
       @simulator.accumulator -= @simulator.timestep
+
+
+    if collisions > 0
+      @broadcastMessage "game:step", @getAllBlobs()
 
     @simulator.tickHandle = setTimeout (=> @gameTick()), 1
     @simulator.lastTick = now
@@ -71,7 +81,7 @@ module.exports = class
         Math.random() * @engine.world.max[0]
         Math.random() * @engine.world.max[1]
       ]
-    mass = parseInt(mass) || 10
+    mass = parseInt(mass) || 10 + Math.floor((Math.random() * 100))
     @engine.addBlob(@blobs, owner, position, mass)
 
   setPlayerTarget: (uuid, point) ->

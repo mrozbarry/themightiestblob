@@ -11,6 +11,7 @@ module.exports = Component.create
   resolution: [1920, 1080]
   camera: [0, 0]
   svgTarget: null
+  zoom: 1
 
   updateCamera: (uuid, blobs) ->
     firstBlob = _.find blobs, ownerId: uuid
@@ -53,6 +54,9 @@ module.exports = Component.create
     @svgTarget = null
     @props.setTarget(null)
 
+  handleMouseWheel: (e) ->
+    @zoom = Math.min(Math.max(1, e.deltaY), 100)
+
   render: ->
     { uuid, worldAttrs, players, blobs } = @props
 
@@ -62,7 +66,8 @@ module.exports = Component.create
       preserveAspectRatio: 'xMidYMid'
       ref: 'root'
       onMouseMove: @handleMouseMotion
-      onMouseLeave: @handleMouseLeave,
+      onMouseLeave: @handleMouseLeave
+      onWheel: @handleMouseWheel,
 
       rect
         x: 0
@@ -77,21 +82,21 @@ module.exports = Component.create
         width: @resolution[0]
         height: @resolution[1],
 
-        g
-          transform: "translate(#{@camera[0]}, #{@camera[1]})",
+        g transform: "translate(#{@camera[0]}, #{@camera[1]})",
+          g transform: "scale(#{@zoom})",
 
-          Grid
-            xMin: worldAttrs.min[0]
-            yMin: worldAttrs.min[0]
-            xMax: worldAttrs.max[0]
-            yMax: worldAttrs.max[1]
-            spacing: 100
-            colour: '#00aaaa'
+            Grid
+              xMin: worldAttrs.min[0]
+              yMin: worldAttrs.min[0]
+              xMax: worldAttrs.max[0]
+              yMax: worldAttrs.max[1]
+              spacing: 100
+              colour: '#a0a0a0'
 
-          blobs.map (blob, idx) ->
-            owner = _.find players, uuid: blob.ownerId
-            Blob
-              key: idx
-              player: owner
-              blob: blob
+            blobs.map (blob, idx) ->
+              owner = _.find players, uuid: blob.ownerId
+              Blob
+                key: idx
+                player: owner
+                blob: blob
 

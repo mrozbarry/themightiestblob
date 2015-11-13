@@ -16,6 +16,9 @@ module.exports = class BlobPhysicsEngine
       collided: new Array()
       postSolve: new Array()
 
+    @lastIntegrate =
+      numberOfCollisions: 0
+
   addBlob: (blobs, ownerId, position, radius) ->
     blob = Point({
       position: position
@@ -46,13 +49,30 @@ module.exports = class BlobPhysicsEngine
     unless blobs.length
       return
 
+    @lastIntegrate.numberOfCollisions = 0
+
     @accumulator += deltaTime
     while @accumulator > @timestep
       @world.integrate(blobs, @timestep)
       _.each blobs, (a) =>
         _.each blobs, (b) =>
           return true if a == b
-          @checkCollision(a, b)
+          if @checkCollision(a, b)
+            totalMass = a.mass + b.mass
+            aPct = a.mass / totalMass
+            if Math.random() > aPct
+              a.mass += 1
+              b.mass -= 1
+            else
+              a.mass -= 1
+              b.mass += 1
+
+            if a.mass < 10 then a.mass = 10
+            if b.mass < 10 then b.mass = 10
+
+            a.radius = a.mass
+            b.radius = b.mass
+            @lastIntegrate.numberOfCollisions += 1
           true
       @accumulator -= @timestep
 
