@@ -46,7 +46,7 @@ module.exports =
 
   sendMessage: (channel, data) ->
     raw = @createMessage(channel, data)
-    # console.log '<<< ', raw
+    console.log '<<< ', raw
     message = lz4.compress raw,
       outputEncoding: 'Base64'
 

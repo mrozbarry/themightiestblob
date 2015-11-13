@@ -57,7 +57,7 @@ module.exports = Component.create
         h2 {}, 'Start Mass'
         input
           type: 'number'
-          min: 0
+          min: 10
           max: 100
           defaultValue: previous.mass
           ref: 'mass'

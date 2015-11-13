@@ -47,14 +47,11 @@ module.exports = Component.create
     local.x = parseInt(local.x)
     local.y = parseInt(local.y)
     @svgTarget = [local.x, local.y]
+    @updateTarget()
 
   handleMouseLeave: (e) ->
-    { uuid } = @props
-    return unless uuid
-
-    blob = _.find @props.blobs, ownerId: uuid
-
-    @svgTarget = blob.position
+    @svgTarget = null
+    @props.setTarget(null)
 
   render: ->
     { uuid, worldAttrs, players, blobs } = @props
