@@ -17,13 +17,6 @@ requestAnimationFrame =
   (renderMethod) ->
     setTimeout(renderMethod, 10 / 6)
 
-cancelAnimationFrame =
-  window.cancelAnimationFrame or
-  window.webkitCancelAnimationFrame or
-  window.mozCancelAnimationFrame or
-  (handle) ->
-    clearTimeout(handle)
-
 module.exports = Component.create
   displayName: 'Application'
 
