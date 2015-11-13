@@ -8,10 +8,6 @@ clientize = require('./client')
 
 module.exports = class
   constructor: (server) ->
-    @wss = new WebSocketServer {
-      server: server
-      clientTracking: true
-    }
 
     @engine = new BlobPhysicsEngine(
       gravity: [0, 0]
@@ -21,14 +17,20 @@ module.exports = class
       bounce: 1.0
     )
     @players = new Array()
+    @blobs = new Array()
 
     @simulator =
       tickHandle: null
       lastTick: Date.now()
       accumulator: 0
-      timestep: (1 / 10)
+      timestep: (1 / 60)
       broadcastTime: 2000
       nextBroadcast: Date.now()
+
+    @wss = new WebSocketServer {
+      server: server
+      clientTracking: true
+    }
 
   run: ->
     @wss.on "connection", (ws) =>
@@ -44,15 +46,15 @@ module.exports = class
     @simulator.accumulator += delta
 
     while @simulator.accumulator > @simulator.timestep
-      @engine.integrate(@simulator.timestep)
+      @engine.integrate(@blobs, @simulator.timestep)
       @simulator.accumulator -= @simulator.timestep
-
-    # if now > @simulator.nextBroadcast
-      @broadcastMessage "game:step", @getAllBlobs()
-      # @simulator.nextBroadcast = now + @simulator.broadcastTime
 
     @simulator.tickHandle = setTimeout (=> @gameTick()), 1
     @simulator.lastTick = now
+
+
+  getAllBlobs: ->
+    _.map @blobs, @blobToPlainObject
 
   blobToPlainObject: (blob) ->
     position: _.map [0, 1], (axis) -> blob.position[axis]
@@ -62,36 +64,34 @@ module.exports = class
     radius: blob.radius
     ownerId: blob.ownerId
 
-  getAllBlobs: ->
-    _.map @engine.blobs, @blobToPlainObject
+
+  spawnBlob: (owner, position, mass) ->
+    unless position
+      position = [
+        Math.random() * @engine.world.max[0]
+        Math.random() * @engine.world.max[1]
+      ]
+    mass = parseInt(mass) || 10
+    @engine.addBlob(@blobs, owner, position, mass)
 
   setPlayerTarget: (uuid, point) ->
-    blobs = @engine.collectBlobsWith ownerId: uuid
-    _.each blobs, (blob) ->
-      distance = Math.sqrt(
-        ((blob.position[0] - point[0]) * (blob.position[0] - point[0])) +
-        ((blob.position[1] - point[1]) * (blob.position[1] - point[1]))
-      )
-      if distance > 10
-        diff = _.map point, (axis, idx) ->
-          (axis - blob.position[idx]) / distance
-        blob.addForce diff
-
+    blobs = _.map blobs, (blob) ->
+      return blob unless blob.ownerId == uuid
+      force = @engine.forceBlobTowards(blob, point)
+      blob.addForce force
+      blob
 
   compressMessage: (message) ->
     lz4.compress message,
       outputEncoding: 'Base64'
-
 
   decompressMessage: (message) ->
     lz4.decompress message,
       inputEncoding: 'Base64'
       outputEncoding: 'String'
 
-
   decodeMessage: (message) ->
     JSON.parse @decompressMessage(message)
-
 
   composeMessage: (channel, data) ->
     channel: channel
@@ -109,13 +109,10 @@ module.exports = class
       catch e
         console.log 'Problem sending to', client
 
-
-
   sendMessage: (client, channel, data) ->
     composed = JSON.stringify @composeMessage(channel, data)
     compressed = @compressMessage composed
     @_sendMessageTo(client, compressed)
-
 
   _sendMessageTo: (client, message) ->
     try
