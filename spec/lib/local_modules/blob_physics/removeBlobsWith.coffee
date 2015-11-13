@@ -6,41 +6,37 @@ describe 'blob_physics_engine', ->
   context 'removeBlobsWith', ->
     it 'returns 0 when no blobs are removed', ->
       engine = new BlobPhysicsEngine()
-      numberRemoved = engine.removeBlobsWith(ownerId: 'foo')
-      expect(numberRemoved).to.equal(0)
+      blobs = new Array()
+      blobs = engine.removeBlobsWith(blobs, ownerId: 'foo')
+      expect(blobs.length).to.equal(0)
 
-    it 'removes all blobs owned by "foo"', ->
+    it 'removes all blobs owned by "foo" when all are owned by foo', ->
       engine = new BlobPhysicsEngine()
+      blobs = new Array()
       [0...10].forEach (blobNumber) ->
-        engine.addBlob('foo', 0, 0, 10)
+        engine.addBlob(blobs, 'foo', 0, 0, 10)
 
-      engine.removeBlobsWith(ownerId: 'foo')
-      expect(engine.blobs).to.have.length(0)
+      blobs = engine.removeBlobsWith(blobs, ownerId: 'foo')
+      expect(blobs).to.have.length(0)
 
 
-    it 'removes only blobs owned by "foo"', ->
+    it 'removes only blobs owned by "foo" when some are owned by foo', ->
       engine = new BlobPhysicsEngine()
-      ['foo', 'foo', 'foo', 'bar', 'foo', 'bar', 'baz'].forEach (blobOwner) ->
-        engine.addBlob(blobOwner, 0, 0, 10)
-
-      engine.removeBlobsWith(ownerId: 'foo')
-      expect(engine.blobs).to.have.length(3)
-
-    it '0 when an empty set of attributes is passed', ->
-      engine = new BlobPhysicsEngine()
+      blobs = new Array()
 
       ['foo', 'foo', 'foo', 'bar', 'foo', 'bar', 'baz'].forEach (blobOwner) ->
-        engine.addBlob(blobOwner, 0, 0, 10)
+        engine.addBlob(blobs, blobOwner, 0, 0, 10)
 
-      numberRemoved = engine.removeBlobsWith(undefined)
-      expect(numberRemoved).to.equal(0)
+      blobs = engine.removeBlobsWith(blobs, ownerId: 'foo')
+      expect(blobs).to.have.length(3)
 
     it 'does not mutate .blobs when no attributes are passed', ->
       engine = new BlobPhysicsEngine()
+      blobs = new Array()
 
       ['foo', 'foo', 'foo', 'bar', 'foo', 'bar', 'baz'].forEach (blobOwner) ->
-        engine.addBlob(blobOwner, 0, 0, 10)
+        engine.addBlob(blobs, blobOwner, 0, 0, 10)
 
-      engine.removeBlobsWith(undefined)
-      expect(engine.blobs).to.have.length(7)
+      blobs = engine.removeBlobsWith(blobs, undefined)
+      expect(blobs).to.have.length(7)
 

@@ -10,12 +10,32 @@ GameProtocolMixin = require('./mixins/game_protocol_mixin')
 BlobPhysicsEngine = require('../../lib/local_modules/blob_physics_engine')
 Point = require('verlet-point')
 
-initialUuid = null
+requestAnimationFrame =
+  window.requestAnimationFrame or
+  window.webkitRequestAnimationFrame or
+  window.mozRequestAnimationFrame or
+  (renderMethod) ->
+    setTimeout(renderMethod, 10 / 6)
 
 module.exports = Component.create
   displayName: 'Application'
 
   mixins: [WsMixin, GameProtocolMixin]
+
+  getInitialState: ->
+    uuid: null
+    previous:
+      name: ''
+      mass: 10
+
+    worldAttrs:
+      min: [0, 0]
+      max: [1920, 1080]
+      gravity: [0, 0]
+
+    players: []
+
+  blobs: new Array()
 
   buildEngine: (options = { gravity: [0, 0], min: [0, 0], max: [1920, 1080], friction: 0.5, bounce: 1.0}) ->
     @engine = new BlobPhysicsEngine(options)
@@ -24,12 +44,12 @@ module.exports = Component.create
     switch message.channel
       when "server:info"
         @setState worldAttrs: message.data, =>
-          @lastUpdate = Date.now()
+          @blobs = new Array()
           @buildEngine(message.data)
-          @stepSimulation(@engine.blobs)
+          @setState lastUpdate: Date.now(), =>
+            @stepSimulation()
 
       when "client:info"
-        console.info 'info', message.data
         @setState uuid: message.data.uuid
 
       when "client:kick"
@@ -37,63 +57,50 @@ module.exports = Component.create
           @disconnectSocket()
 
       when "client:list"
-        console.info 'list', message.data
         @setState players: message.data
 
       when "game:step"
         return unless @engine?
         if message.data instanceof Array
-          @engine.blobs = _.map message.data, (blob) ->
+          @blobs = _.map message.data, (blob) ->
             pnt = Point(blob)
             pnt.ownerId = blob.ownerId
             pnt
 
-  stepSimulation: (blobs) ->
+      when "game:inputs"
+        inputs = message.data
+        @blobs = @retargetBlobsFromInput(@blobs, message.data)
+
+  retargetBlobsFromInput: (blobs, input) ->
+    _.map blobs, (blob) =>
+      return blob unless blob.ownerId == input.uuid
+
+      force = @engine.forceBlobTowards(blob, input.target)
+      blob.addForce force
+
+      blob
+
+
+  stepSimulation: (now) ->
     return unless @engine?
 
-    { lastUpdate } = @state
-    now = Date.now()
+    if @state.lastUpdate > 0
+      delta = (now - @state.lastUpdate) / 1000.0
 
-    if lastUpdate > 0
-      delta = (now - lastUpdate) / 1000.0
-      @lastUpdate = now
-
-      @engine.blobs = blobs
-      @engine.integrate(delta)
+      @engine.integrate(@blobs, delta)
 
     # Step simulation
+    requestAnimationFrame ((timestamp)=> @stepSimulation(timestamp))
     @setState lastUpdate: now
 
   setTarget: (point) ->
-    blobs = @engine.collectBlobsWith ownerId: @state.uuid
-    _.each blobs, (blob) ->
-      distance = Math.sqrt(
-        ((blob.position[0] - point[0]) * (blob.position[0] - point[0])) +
-        ((blob.position[1] - point[1]) * (blob.position[1] - point[1]))
-      )
-      if distance > 10
-        diff = _.map point, (axis, idx) ->
-          (axis - blob.position[idx]) / distance
-        blob.addForce diff
-    @sendTarget point
-
-  getInitialState: ->
-    uuid: initialUuid
-    previous:
-      name: ''
-      mass: 10
-
-    lastUpdate: null
-
-    worldAttrs:
-      min: [0, 0]
-      max: [1920, 1080]
-      gravity: [0, 0]
-
-    players: _.map [initialUuid], (id, rank) ->
-      uuid: id
-      name: sillyname()
-      rank: rank + 1
+    return unless @state.uuid
+    me = _.find @state.players, uuid: @state.uuid
+    if point
+      if point[0] != me.target[0] && point[1] != me.target[1]
+        @sendTarget point
+    else
+      @sendTarget null
 
   componentWillMount: ->
     @engine = null
@@ -102,9 +109,6 @@ module.exports = Component.create
   componentWillUnmount: ->
     @leaveGame()
     @engine = null
-
-  componentDidUpdate: ->
-    setTimeout (=> @stepSimulation(@engine.blobs)), 1
 
   render: ->
     React.DOM.div {},
@@ -116,6 +120,6 @@ module.exports = Component.create
         uuid: @state.uuid
         worldAttrs: @state.worldAttrs
         players: @state.players
-        blobs: if @engine? then @engine.blobs else []
+        blobs: @blobs
         setTarget: @setTarget
 

@@ -9,32 +9,37 @@ module.exports = (server, socket) ->
     target: [0, 0]
     colour: please.make_color()
 
+  server.sendMessage(socket, "server:info", server.engine.world)
+
   socket.on "message", (data, flags) ->
     message = server.decodeMessage(data)
 
     switch message.channel
       when "client:join"
         socket.tmb.name = message.data.name
-        position = [
-          Math.random() * server.engine.world.max[0]
-          Math.random() * server.engine.world.max[1]
-        ]
-        server.engine.addBlob socket.tmb.uuid, position, parseInt(message.data.mass) || 10
+
+        server.spawnBlob socket.tmb.uuid, null, message.data.mass
+
         server.sendMessage(socket, "client:info", socket.tmb)
 
         clients = _.map server.wss.clients, (client) -> client.tmb
         server.broadcastMessage "client:list", clients
-        server.sendMessage socket, "game:step", server.getAllBlobs()
+        server.broadcastMessage "game:step", server.getAllBlobs()
 
       when "client:leave"
         server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
         socket.close()
 
       when "client:target"
-        server.setPlayerTarget(socket.tmb.uuid, message.data)
+        socket.tmb.target = message.data
+
+        if message.data
+          server.setPlayerTarget(socket.tmb.uuid, message.data)
+
+        _.each server.wss.clients, (client) ->
+          server.sendMessage(client, "game:inputs", _.pick(socket.tmb, ['uuid', 'target']))
 
   socket.on "close", ->
     server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)
 
-  server.sendMessage(socket, 'server:info', server.engine.world)
 

@@ -41,7 +41,6 @@ if development()
       chunkModules: false
       modules: false
     },
-    lazy: true
   )
   console.log ' -> Webpack Hot Middleware'
   app.use WebpackHotMiddleware(compiler)
