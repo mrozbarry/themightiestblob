@@ -3,11 +3,16 @@ _ = require('lodash')
 please = require('pleasejs')
 
 module.exports = (server, socket) ->
+  uuid = uuid.v4()
   socket.tmb =
-    uuid: uuid.v4()
+    uuid: uuid
     name: null
     target: [0, 0]
     colour: please.make_color()
+    team: null
+    respawn: ->
+      server.removeBlobsOfOwner(uuid)
+      server.broadcastAllBlobs()
 
   server.sendMessage(socket, "server:info", server.engine.world)
 
@@ -24,7 +29,7 @@ module.exports = (server, socket) ->
 
         clients = _.map server.wss.clients, (client) -> client.tmb
         server.broadcastMessage "client:list", clients
-        server.broadcastMessage "game:step", server.getAllBlobs()
+        server.broadcastAllBlobs(true)
 
       when "client:leave"
         server.engine.removeBlobsWith(ownerId: socket.tmb.uuid)

@@ -2,7 +2,6 @@ http = require("http")
 express = require("express")
 path = require("path")
 
-
 # ---
 
 GameServer = require("./game_server")
@@ -57,4 +56,5 @@ game.run()
 
 app.get '*', (req, res) ->
   res.sendFile path.join(__dirname, '..', 'public', 'index.html')
+
 

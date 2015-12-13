@@ -5,23 +5,19 @@ lz4 = require('lzutf8')
 BlobPhysicsEngine = require('../lib/local_modules/blob_physics_engine')
 clientize = require('./client')
 
-
 module.exports = class
   constructor: (server) ->
-
     @engine = new BlobPhysicsEngine(
-      gravity: [0, 0]
-      min: [0, 0]
-      max: [100000, 10000]
-      friction: 0.5
-      bounce: 1.0
+      verlet:
+        gravity: [0, 0]
+        min: [0, 0]
+        max: [5000, 5000]
+        friction: 0.5
+        bounce: 1.0
     )
-    @players = new Array()
     @blobs = new Array()
 
-    _.each [0..200], (worldBlob) =>
-      @spawnBlob()
-
+    _.each [0..200], (worldBlob) => @spawnBlob()
 
     @simulator =
       tickHandle: null
@@ -37,8 +33,7 @@ module.exports = class
     }
 
   run: ->
-    @wss.on "connection", (ws) =>
-      clientize(@, ws)
+    @wss.on "connection", (ws) => clientize(@, ws)
 
     @simulator.lastTick = Date.now()
     @gameTick()
@@ -49,30 +44,47 @@ module.exports = class
     delta = (now - @simulator.lastTick) / 1000
     @simulator.accumulator += delta
 
-    collisions = 0
-    while @simulator.accumulator > @simulator.timestep
-      @engine.integrate(@blobs, @simulator.timestep)
-      collisions += @engine.lastIntegrate.numberOfCollisions
-      @simulator.accumulator -= @simulator.timestep
+    numberOfBlobs = @blobs.length
+    @blobs = @gameTickSimulate(@blobs)
 
-
-    if collisions > 0
-      @broadcastMessage "game:step", @getAllBlobs()
+    @gameTickBroadcast(numberOfBlobs, @blobs.length)
 
     @simulator.tickHandle = setTimeout (=> @gameTick()), 1
     @simulator.lastTick = now
 
+  gameTickSimulate: (blobs) ->
+    while @simulator.accumulator > @simulator.timestep
+      @blobs = @engine.integrate(blobs, @simulator.timestep)
+      @simulator.accumulator -= @simulator.timestep
+    blobs
+
+  gameTickBroadcast: (blobCountBefore, blobCountAfter) ->
+    blobCountChange = blobCountBefore != blobCountAfter
+    someCollisions = @engine.lastIntegrate.collisions.length > 0
+    @broadcastAllBlobs(someCollisions || blobCountChange)
+
+  broadcastAllBlobs: (force = false) ->
+    now = Date.now()
+    if now > @simulator.nextBroadcast || force
+      @broadcastMessage "game:step", @getAllBlobs()
+      @simulator.nextBroadcast = now + 10000
 
   getAllBlobs: ->
     _.map @blobs, @blobToPlainObject
 
+  removeBlobsOfOwner: (ownerId) ->
+    @blobs = _.reject @blobs, ownerId: ownerId
+
   blobToPlainObject: (blob) ->
+    id: blob.id
     position: _.map [0, 1], (axis) -> blob.position[axis]
     previous: _.map [0, 1], (axis) -> blob.previous[axis]
     acceleration: _.map [0, 1], (axis) -> blob.acceleration[axis]
     mass: blob.mass
     radius: blob.radius
     ownerId: blob.ownerId
+    isConsumable: blob.isConsumable
+    meta: blob.meta
 
 
   spawnBlob: (owner, position, mass) ->
@@ -81,11 +93,12 @@ module.exports = class
         Math.random() * @engine.world.max[0]
         Math.random() * @engine.world.max[1]
       ]
+
     mass = parseInt(mass) || 10 + Math.floor((Math.random() * 100))
     @engine.addBlob(@blobs, owner, position, mass)
 
   setPlayerTarget: (uuid, point) ->
-    blobs = _.map blobs, (blob) ->
+    @blobs = _.map @blobs, (blob) =>
       return blob unless blob.ownerId == uuid
       force = @engine.forceBlobTowards(blob, point)
       blob.addForce force

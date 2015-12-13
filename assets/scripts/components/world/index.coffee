@@ -4,6 +4,7 @@ require('./styles/index.sass')
 
 Blob = require('../blob/index')
 Grid = require('../grid/index')
+Players = require('../players/index')
 
 module.exports = Component.create
   displayName: 'Components:World'
@@ -30,8 +31,23 @@ module.exports = Component.create
     ]
     @props.setTarget(target)
 
+  # updateZoom: (uuid, blobs) ->
+  #   return unless uuid?
+  #
+  #   ownedBlobs = _.select blobs, ownerId: uuid
+  #
+  #   largestRadius = _.reduce ownedBlobs, ((largestRadius, blob) ->
+  #     Math.max(largestRadius, blob.radius)
+  #   ), 0
+  #
+  #   @zoom = Math.max((largestRadius * .5) / @resolution[1], 1)
+  #   console.log largestRadius, @resolution[1], @zoom
+
+
+
   componentWillReceiveProps: (nextProps) ->
     @updateCamera(nextProps.uuid, nextProps.blobs)
+    # @updateZoom(nextProps.uuid, nextProps.blobs)
 
   componentWillUpdate: ->
     @updateTarget()
@@ -65,9 +81,9 @@ module.exports = Component.create
       viewBox: "0 0 #{@resolution[0]} #{@resolution[1]}",
       preserveAspectRatio: 'xMidYMid'
       ref: 'root'
+      # onWheel: @handleMouseWheel
       onMouseMove: @handleMouseMotion
-      onMouseLeave: @handleMouseLeave
-      onWheel: @handleMouseWheel,
+      onMouseLeave: @handleMouseLeave,
 
       rect
         x: 0
@@ -99,4 +115,10 @@ module.exports = Component.create
                 key: idx
                 player: owner
                 blob: blob
+        Players
+          players: players
+          blobs: blobs
+          left: 1700
+          top: 0
+          width: 220
 

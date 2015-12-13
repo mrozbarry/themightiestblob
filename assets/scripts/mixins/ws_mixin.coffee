@@ -37,6 +37,7 @@ module.exports =
   disconnectSocket: ->
     @socket.close()
     @socket = null
+    @blobs = new Array()
 
   createMessage: (channel, data) ->
     JSON.stringify({

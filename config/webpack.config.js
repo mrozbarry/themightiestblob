@@ -8,7 +8,7 @@ module.exports = {
   devtool: 'eval-source-map',
 
   entry: [
-    "webpack-hot-middleware/client?relaod=true",
+    "webpack-hot-middleware/client",
     mainPath
   ],
 

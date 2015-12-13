@@ -27,27 +27,20 @@ module.exports = Component.create
 
   render: ->
     { previous } = @props
-    div
-      style: {
-        zIndex: 999
-        position: 'absolute'
-        top: '50%'
-        left: '50%'
-        width: '300px'
-        height: '400px'
-        marginLeft: '-150px'
-        marginTop: '-200px'
-        backgroundColor: 'white'
-        border: '1px black solid'
-      },
-      h1 {}, 'Get Ready To Blob!'
-      div {},
-        h2 {}, 'Your Name'
+
+
+
+    div className: 'join-modal',
+      h1 className: 'join-modal__title', 'Get Ready To Blob!'
+      div className: 'join-modal__name',
+        h2 className: 'join-modal__name-prompt',
+          'Your Name'
         input
-          type: 'text'
-          placeholder: 'Your Blobbed-out Name'
-          defaultValue: previous.name
+          className: 'join-modal__name-input'
           ref: 'name'
+          type: 'text'
+          placeholder: 'Nickname'
+          defaultValue: previous.name
 
         button
           onClick: @randomName,

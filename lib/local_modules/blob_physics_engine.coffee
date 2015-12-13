@@ -3,29 +3,40 @@ VerletSystem = require('verlet-system')
 Point = require('verlet-point')
 Constraint = require('verlet-constraint')
 _ = require('lodash')
+uuid = require('uuid')
 
 module.exports = class BlobPhysicsEngine
-  constructor: (verletSystemOpts = {}) ->
-    @world = VerletSystem(verletSystemOpts)
+  constructor: (options = {}) ->
+    @world = VerletSystem(options.verlet)
 
     @accumulator = 0
     @timestep = (1 / 60)
+    @time = 0
 
     @callbacks =
+      preIntegrate: new Array()
       preSolve: new Array()
       collided: new Array()
       postSolve: new Array()
+      postIntegrate: new Array()
 
     @lastIntegrate =
       numberOfCollisions: 0
+      collisions: []
 
-  addBlob: (blobs, ownerId, position, radius) ->
+  registerPlugin: (register) ->
+    register(@)
+
+  addBlob: (blobs, ownerId, position, radius, options = {isConsumable: true, isMovable: true}) ->
     blob = Point({
       position: position
       radius: radius
-      mass: radius
+      mass: if options.isMovable? then radius else Infinity
     })
+    blob.id = uuid()
     blob.ownerId = ownerId
+    blob.isConsumable = options.isConsumable
+    blob.meta = {}
     blobs.push blob
     blob
 
@@ -47,36 +58,21 @@ module.exports = class BlobPhysicsEngine
 
   integrate: (blobs, deltaTime) ->
     unless blobs.length
-      return
-
-    @lastIntegrate.numberOfCollisions = 0
+      return blobs
 
     @accumulator += deltaTime
     while @accumulator > @timestep
+      @time += @timestep
       @world.integrate(blobs, @timestep)
-      _.each blobs, (a) =>
-        _.each blobs, (b) =>
-          return true if a == b
-          if @checkCollision(a, b)
-            totalMass = a.mass + b.mass
-            aPct = a.mass / totalMass
-            if Math.random() > aPct
-              a.mass += 1
-              b.mass -= 1
-            else
-              a.mass -= 1
-              b.mass += 1
-
-            if a.mass < 10 then a.mass = 10
-            if b.mass < 10 then b.mass = 10
-
-            a.radius = a.mass
-            b.radius = b.mass
-            @lastIntegrate.numberOfCollisions += 1
-          true
+      blobs = _.reject blobs, (b) -> b.mass < 5
+      # blobs = @collisions(blobs, @time)
       @accumulator -= @timestep
 
-  checkCollision: (a, b) ->
+    blobs
+
+  testCollision: (a, b) ->
+    return false if a == b
+
     xOverlapA = a.position[0] + a.radius + b.radius > b.position[0]
     xOverlapB = a.position[0] < b.position[0] + a.radius + b.radius
     xOverlap = xOverlapA && xOverlapB
@@ -92,7 +88,7 @@ module.exports = class BlobPhysicsEngine
       return false unless @emit 'preSolve', [a, b, pointOfCollision]
       constraint = Constraint [a, b], { stiffness: 0.8, restingDistance: (a.radius + b.radius)}
 
-      if @emit('collided', [a, b, pointOfCollision])
+      if @emit('collided', [a, b, constraint, pointOfCollision])
         constraint.solve()
 
       @emit 'postSolve', [a, b, pointOfCollision]

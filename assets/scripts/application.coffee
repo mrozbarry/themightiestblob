@@ -8,7 +8,9 @@ WsMixin = require('./mixins/ws_mixin')
 GameProtocolMixin = require('./mixins/game_protocol_mixin')
 
 BlobPhysicsEngine = require('../../lib/local_modules/blob_physics_engine')
+verletDefaults = require('../../lib/local_modules/verlet_defaults')
 Point = require('verlet-point')
+
 
 requestAnimationFrame =
   window.requestAnimationFrame or
@@ -28,17 +30,16 @@ module.exports = Component.create
       name: ''
       mass: 10
 
-    worldAttrs:
-      min: [0, 0]
-      max: [1920, 1080]
-      gravity: [0, 0]
+    worldAttrs: verletDefaults
 
     players: []
 
   blobs: new Array()
 
-  buildEngine: (options = { gravity: [0, 0], min: [0, 0], max: [1920, 1080], friction: 0.5, bounce: 1.0}) ->
-    @engine = new BlobPhysicsEngine(options)
+  buildEngine: (options = verletDefaults) ->
+    @engine = new BlobPhysicsEngine(
+      verlet: options
+    )
 
   processMessage: (message) ->
     switch message.channel
@@ -87,7 +88,7 @@ module.exports = Component.create
     if @state.lastUpdate > 0
       delta = (now - @state.lastUpdate) / 1000.0
 
-      @engine.integrate(@blobs, delta)
+      @blobs = @engine.integrate(@blobs, delta)
 
     # Step simulation
     requestAnimationFrame ((timestamp)=> @stepSimulation(timestamp))
