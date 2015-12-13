@@ -12,14 +12,14 @@ module.exports = class
     @engine = new BlobPhysicsEngine(
       gravity: [0, 0]
       min: [0, 0]
-      max: [100000, 10000]
+      max: [5000, 5000]
       friction: 0.5
       bounce: 1.0
     )
     @players = new Array()
     @blobs = new Array()
 
-    _.each [0..200], (worldBlob) =>
+    _.each [0..50], (worldBlob) =>
       @spawnBlob()
 
 
@@ -28,7 +28,7 @@ module.exports = class
       lastTick: Date.now()
       accumulator: 0
       timestep: (1 / 60)
-      broadcastTime: 2000
+      broadcastTime: 500
       nextBroadcast: Date.now()
 
     @wss = new WebSocketServer {
@@ -56,8 +56,9 @@ module.exports = class
       @simulator.accumulator -= @simulator.timestep
 
 
-    if collisions > 0
+    if (new Date()).getTime() > @simulator.nextBroadcast
       @broadcastMessage "game:step", @getAllBlobs()
+      @simulator.nextBroadcast = (new Date()).getTime() + @simulator.broadcastTime
 
     @simulator.tickHandle = setTimeout (=> @gameTick()), 1
     @simulator.lastTick = now
@@ -85,7 +86,7 @@ module.exports = class
     @engine.addBlob(@blobs, owner, position, mass)
 
   setPlayerTarget: (uuid, point) ->
-    blobs = _.map blobs, (blob) ->
+    @blobs = _.map @blobs, (blob) =>
       return blob unless blob.ownerId == uuid
       force = @engine.forceBlobTowards(blob, point)
       blob.addForce force

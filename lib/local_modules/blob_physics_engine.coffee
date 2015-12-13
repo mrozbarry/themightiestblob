@@ -57,12 +57,15 @@ module.exports = class BlobPhysicsEngine
       _.each blobs, (a) =>
         _.each blobs, (b) =>
           return true if a == b
+
           if @checkCollision(a, b)
             totalMass = a.mass + b.mass
             aPct = a.mass / totalMass
+
             if Math.random() > aPct
               a.mass += 1
               b.mass -= 1
+
             else
               a.mass -= 1
               b.mass += 1
