@@ -12,14 +12,14 @@ module.exports = class
     @engine = new BlobPhysicsEngine(
       gravity: [0, 0]
       min: [0, 0]
-      max: [5000, 5000]
+      max: [700, 700]
       friction: 0.5
       bounce: 1.0
     )
     @players = new Array()
     @blobs = new Array()
 
-    _.each [0..50], (worldBlob) =>
+    _.each [0..100], (worldBlob) =>
       @spawnBlob()
 
 
